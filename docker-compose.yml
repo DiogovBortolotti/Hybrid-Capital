@@ -1,0 +1,85 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5440:5432"
+    networks:
+      - projeto  # Definir rede
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6380:6379"
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - projeto  # Definir rede
+
+  web:
+    build: .
+    user: root
+    command: >
+      sh -c "chmod -R 777 /settings &&
+            python manage.py makemigrations &&
+            python manage.py migrate &&
+            gunicorn --bind 0.0.0.0:8000 settings.wsgi:application"
+    env_file:
+      - .env
+    volumes:
+      - .:/settings
+    ports:
+      - "8080:8000"
+    depends_on:
+      - db
+      - redis
+    restart: always
+    networks:
+      - projeto  # Definir rede
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx:/etc/nginx/conf.d  # Arquivos de configuração do Nginx
+      - ./staticfiles:/app/staticfiles  # Arquivos estáticos coletados
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    networks:
+      - projeto
+
+
+
+    
+
+  # worker:
+  #   build: .
+  #   command: celery -A app worker --loglevel=info
+  #   environment:
+  #     - CELERY_BROKER_URL=redis://app_economia-redis-1:6379/0
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - .:/app
+  #   networks:
+  #     - projeto  # Definir rede
+  #   restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  projeto:
+    driver: bridge  # Definindo a rede 'projeto'
