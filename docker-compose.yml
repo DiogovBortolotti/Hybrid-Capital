@@ -10,7 +10,7 @@ services:
     ports:
       - "5440:5432"
     networks:
-      - projeto  # Definir rede
+      - projeto
 
   redis:
     image: redis:7
@@ -21,7 +21,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - projeto  # Definir rede
+      - projeto
 
   web:
     build: .
@@ -42,39 +42,18 @@ services:
       - redis
     restart: always
     networks:
-      - projeto  # Definir rede
+      - projeto
 
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx:/etc/nginx/conf.d  # Arquivos de configuração do Nginx
-      - ./staticfiles:/app/staticfiles  # Arquivos estáticos coletados
+      - ./nginx:/etc/nginx/conf.d
     ports:
       - "80:80"
     depends_on:
       - web
     networks:
       - projeto
-
-
-
-    
-
-  # worker:
-  #   build: .
-  #   command: celery -A app worker --loglevel=info
-  #   environment:
-  #     - CELERY_BROKER_URL=redis://app_economia-redis-1:6379/0
-  #   depends_on:
-  #     - db
-  #     - redis
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - .:/app
-  #   networks:
-  #     - projeto  # Definir rede
-  #   restart: always
 
 volumes:
   postgres_data:
