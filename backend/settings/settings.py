@@ -33,10 +33,8 @@ DEBUG = os.getenv('DEBUG', 'True').upper() == 'TRUE'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 # Configurações do CORS
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
-CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in CORS_ALLOWED_ORIGINS if origin.strip()
-]
+CORS_ALLOWED_ORIGINS = [(os.getenv('CORS_ALLOWED_ORIGINS'))]
+
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [

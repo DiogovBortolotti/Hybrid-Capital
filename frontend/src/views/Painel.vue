@@ -132,6 +132,7 @@ export default {
     },
     data() {
         return {
+            apiUrl: process.env.VUE_APP_API_URL,
             isLogin: true,
             showPassword: false,
             showRegisterPassword: false,
@@ -146,7 +147,7 @@ export default {
                 email: '',
                 password: '',
                 confirm_password: '',
-            },
+            }
         };
     },
     methods: {
@@ -167,7 +168,7 @@ export default {
         },
         async handleLogin() {
             try {
-                const response = await axios.post('http://localhost:8000/account/login/', {
+                const response = await axios.post(`${this.apiUrl}/account/login/`, {
                     email: this.loginForm.email,
                     password: this.loginForm.password,
                 });
@@ -202,19 +203,18 @@ export default {
                 return;
             }
             try {
-                const response = await axios.post('http://localhost:8000/account/register/', {
+                const response = await axios.post(`${this.apiUrl}/account/register/`, {
                     full_name: this.registerForm.full_name,
                     email: this.registerForm.email,
                     password: this.registerForm.password,
-                    confirm_password: this.registerForm.confirm_password, // Certifique-se de enviar este campo
+                    confirm_password: this.registerForm.confirm_password,
                 });
                 alert('Conta criada com sucesso!');
-                this.isLogin = true; // Redireciona para o formulário de login
+                this.isLogin = true;
             } catch (error) {
                 if (error.response && error.response.status === 400) {
                     const errors = error.response.data;
 
-                    // Exibe mensagens de erro para todos os campos
                     let errorMessage = '';
                     for (const field in errors) {
                         errorMessage += `${field.charAt(0).toUpperCase() + field.slice(1)}: ${errors[field].join(', ')}\n`;
