@@ -28,16 +28,16 @@
                     </div>
 
                     <!-- Formulário de Login -->
-                    <form v-if="isLogin" class="space-y-4">
+                    <form v-if="isLogin" class="space-y-4" @submit.prevent="handleLogin">
                         <div class="relative">
-                            <input type="email" placeholder="Email"
+                            <input v-model="loginForm.email" type="email" placeholder="Email"
                                 class="w-full bg-[#3a375c] border border-[#615c8e] rounded-lg py-3 px-4 text-[#eed4ed] placeholder:text-[#a79de9]/70 focus:outline-none focus:ring-2 focus:ring-[#a79de9] transition-all duration-300" />
                             <span class="material-symbols-outlined absolute right-3 top-3 text-[#a79de9]">mail</span>
                         </div>
 
-
                         <div class="relative">
-                            <input :type="showPassword ? 'text' : 'password'" placeholder="Senha"
+                            <input v-model="loginForm.password" :type="showPassword ? 'text' : 'password'"
+                                placeholder="Senha"
                                 class="w-full bg-[#3a375c] border border-[#615c8e] rounded-lg py-3 px-4 text-[#eed4ed] placeholder:text-[#a79de9]/70 focus:outline-none focus:ring-2 focus:ring-[#a79de9] transition-all duration-300" />
                             <span
                                 class="material-symbols-outlined absolute right-3 top-3 text-[#a79de9] cursor-pointer hover:text-[#eed4ed] transition-colors"
@@ -46,29 +46,29 @@
                             </span>
                         </div>
 
-
-                        <button type="button"
-                            class="w-full bg-gradient-to-r from-[#615c8e] to-[#a79de9] text-white py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-[#a79de9]/20 transition-all duration-300 transform hover:-translate-y-1"
-                            @click="handleLogin">
+                        <button type="submit"
+                            class="w-full bg-gradient-to-r from-[#615c8e] to-[#a79de9] text-white py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-[#a79de9]/20 transition-all duration-300 transform hover:-translate-y-1">
                             Entrar
                         </button>
                     </form>
 
-                    <form v-else class="space-y-4">
+                    <!-- Formulário de Registro -->
+                    <form v-else class="space-y-4" @submit.prevent="handleRegister">
                         <div class="relative">
-                            <input type="text" placeholder="Nome Completo"
+                            <input v-model="registerForm.full_name" type="text" placeholder="Nome Completo"
                                 class="w-full bg-[#3a375c] border border-[#615c8e] rounded-lg py-3 px-4 text-[#eed4ed] placeholder:text-[#a79de9]/70 focus:outline-none focus:ring-2 focus:ring-[#a79de9] transition-all duration-300" />
                             <span class="material-symbols-outlined absolute right-3 top-3 text-[#a79de9]">person</span>
                         </div>
 
                         <div class="relative">
-                            <input type="email" placeholder="Email"
+                            <input v-model="registerForm.email" type="email" placeholder="Email"
                                 class="w-full bg-[#3a375c] border border-[#615c8e] rounded-lg py-3 px-4 text-[#eed4ed] placeholder:text-[#a79de9]/70 focus:outline-none focus:ring-2 focus:ring-[#a79de9] transition-all duration-300" />
                             <span class="material-symbols-outlined absolute right-3 top-3 text-[#a79de9]">mail</span>
                         </div>
 
                         <div class="relative">
-                            <input :type="showRegisterPassword ? 'text' : 'password'" placeholder="Senha"
+                            <input v-model="registerForm.password" :type="showRegisterPassword ? 'text' : 'password'"
+                                placeholder="Senha"
                                 class="w-full bg-[#3a375c] border border-[#615c8e] rounded-lg py-3 px-4 text-[#eed4ed] placeholder:text-[#a79de9]/70 focus:outline-none focus:ring-2 focus:ring-[#a79de9] transition-all duration-300" />
                             <span
                                 class="material-symbols-outlined absolute right-3 top-3 text-[#a79de9] cursor-pointer hover:text-[#eed4ed] transition-colors"
@@ -78,7 +78,8 @@
                         </div>
 
                         <div class="relative">
-                            <input :type="showConfirmPassword ? 'text' : 'password'" placeholder="Confirmar Senha"
+                            <input v-model="registerForm.confirm_password"
+                                :type="showConfirmPassword ? 'text' : 'password'" placeholder="Confirmar Senha"
                                 class="w-full bg-[#3a375c] border border-[#615c8e] rounded-lg py-3 px-4 text-[#eed4ed] placeholder:text-[#a79de9]/70 focus:outline-none focus:ring-2 focus:ring-[#a79de9] transition-all duration-300" />
                             <span
                                 class="material-symbols-outlined absolute right-3 top-3 text-[#a79de9] cursor-pointer hover:text-[#eed4ed] transition-colors"
@@ -87,11 +88,11 @@
                             </span>
                         </div>
 
-
                         <div class="flex items-center space-x-2 cursor-pointer group">
                             <div class="relative w-4 h-4">
                                 <label class="cursor-pointer">
-                                    <input type="checkbox" class="peer opacity-0 w-4 h-4 absolute" />
+                                    <input type="checkbox" v-model="termsAccepted"
+                                        class="peer opacity-0 w-4 h-4 absolute" />
                                     <div
                                         class="w-4 h-4 border border-[#a79de9] rounded-sm peer-checked:bg-[#a79de9] peer-checked:border-0 transition-all">
                                     </div>
@@ -99,16 +100,15 @@
                                         class="material-symbols-outlined absolute top-0 left-0 scale-0 peer-checked:scale-100 text-[12px] text-[#282641] transition-transform duration-200"></span>
                                 </label>
                             </div>
-                            <a href="https://seusite.com/termos-e-condicoes" target="_blank"
+                            <router-link to="/termos-e-condicoes" target="_blank"
                                 class="text-sm text-[#a79de9] group-hover:text-[#eed4ed] transition-colors">
                                 Eu concordo com os Termos e Condições
-                            </a>
+                            </router-link>
+
                         </div>
 
-
-                        <button type="button"
-                            class="w-full bg-gradient-to-r from-[#615c8e] to-[#a79de9] text-white py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-[#a79de9]/20 transition-all duration-300 transform hover:-translate-y-1"
-                            @click="handleRegister">
+                        <button type="submit"
+                            class="w-full bg-gradient-to-r from-[#615c8e] to-[#a79de9] text-white py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-[#a79de9]/20 transition-all duration-300 transform hover:-translate-y-1">
                             Criar Conta
                         </button>
                     </form>
@@ -116,12 +116,12 @@
             </div>
         </main>
 
-
         <Footer />
     </div>
 </template>
 
 <script>
+import axios from 'axios';
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 
@@ -136,6 +136,17 @@ export default {
             showPassword: false,
             showRegisterPassword: false,
             showConfirmPassword: false,
+            termsAccepted: false,
+            loginForm: {
+                email: '',
+                password: '',
+            },
+            registerForm: {
+                full_name: '',
+                email: '',
+                password: '',
+                confirm_password: '',
+            },
         };
     },
     methods: {
@@ -144,12 +155,6 @@ export default {
         },
         toggleRegister() {
             this.isLogin = false;
-        },
-        handleLogin() {
-            alert('Login realizado com sucesso!');
-        },
-        handleRegister() {
-            alert('Conta criada com sucesso!');
         },
         togglePasswordVisibility() {
             this.showPassword = !this.showPassword;
@@ -160,9 +165,71 @@ export default {
         toggleConfirmPasswordVisibility() {
             this.showConfirmPassword = !this.showConfirmPassword;
         },
-    },
-};
+        async handleLogin() {
+            try {
+                const response = await axios.post('http://localhost:8000/account/login/', {
+                    email: this.loginForm.email,
+                    password: this.loginForm.password,
+                });
+
+                if (response.status === 200) {
+                    // Armazena o token no localStorage
+                    localStorage.setItem('token', response.data.token);
+
+                    // Armazena os dados do usuário no localStorage (opcional)
+                    localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                    // Configura o token no cabeçalho das requisições do Axios
+                    axios.defaults.headers.common['Authorization'] = `Token ${response.data.token}`;
+
+                    alert('Login realizado com sucesso!');
+                    // Redireciona para a página inicial ou painel do usuário
+                    this.$router.push('/');
+                } else {
+                    alert('Erro ao fazer login: ' + response.data.error);
+                }
+            } catch (error) {
+                alert('Erro ao fazer login: ' + (error.response?.data?.error || 'Credenciais inválidas'));
+            }
+        },
+        async handleRegister() {
+            if (!this.termsAccepted) {
+                alert('Você deve aceitar os Termos e Condições para registrar.');
+                return;
+            }
+            if (this.registerForm.password !== this.registerForm.confirm_password) {
+                alert('As senhas não coincidem.');
+                return;
+            }
+            try {
+                const response = await axios.post('http://localhost:8000/account/register/', {
+                    full_name: this.registerForm.full_name,
+                    email: this.registerForm.email,
+                    password: this.registerForm.password,
+                    confirm_password: this.registerForm.confirm_password, // Certifique-se de enviar este campo
+                });
+                alert('Conta criada com sucesso!');
+                this.isLogin = true; // Redireciona para o formulário de login
+            } catch (error) {
+                if (error.response && error.response.status === 400) {
+                    const errors = error.response.data;
+
+                    // Exibe mensagens de erro para todos os campos
+                    let errorMessage = '';
+                    for (const field in errors) {
+                        errorMessage += `${field.charAt(0).toUpperCase() + field.slice(1)}: ${errors[field].join(', ')}\n`;
+                    }
+
+                    alert(errorMessage || 'Erro desconhecido');
+                } else {
+                    alert('Erro ao criar conta: Erro desconhecido');
+                }
+            }
+        },
+    }
+}
 </script>
+
 
 <style scoped>
 @import url(https://fonts.googleapis.com/css2?family=Lato&display=swap);

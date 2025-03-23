@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/Home.vue'
 import AboutView from '../views/AboutView.vue'
 import PainelView from '../views/Painel.vue'
+import Termos from '../views/Termos.vue'
 
 const routes = [
     {
@@ -18,7 +19,13 @@ const routes = [
     path: '/painel',
     name: 'painel',
     component: PainelView
-  }
+  },
+    {
+    path: '/termos-e-condicoes',
+    name: 'termos',
+    component: Termos
+  },
+
 ]
 
 const router = createRouter({
