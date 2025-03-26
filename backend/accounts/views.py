@@ -33,7 +33,6 @@ def register(request):
             user = serializer.save()
             logger.info("Usuário criado com sucesso: %s", user)
 
-            # Cria ou obtém o token para o usuário
             token, created = Token.objects.get_or_create(user=user)
             logger.info("Token gerado: %s", token.key)
 
@@ -91,11 +90,14 @@ def user_logout(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def check_auth(request):
-    user = request.user
-    return Response({
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-        }
-    }, status=status.HTTP_200_OK)
+    try:
+        user = request.user
+        return Response({
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+            }
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

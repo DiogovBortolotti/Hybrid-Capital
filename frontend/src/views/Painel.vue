@@ -167,6 +167,18 @@ export default {
             this.showConfirmPassword = !this.showConfirmPassword;
         },
         async handleLogin() {
+            if (!this.loginForm.email || !this.loginForm.password) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            // Validação de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(this.loginForm.email)) {
+                alert('Por favor, insira um email válido.');
+                return;
+            }
+
             try {
                 const response = await axios.post(`${this.apiUrl}/account/login/`, {
                     email: this.loginForm.email,
@@ -183,14 +195,25 @@ export default {
                     // Configura o token no cabeçalho das requisições do Axios
                     axios.defaults.headers.common['Authorization'] = `Token ${response.data.token}`;
 
-                    alert('Login realizado com sucesso!');
-                    // Redireciona para a página inicial ou painel do usuário
-                    this.$router.push('/');
+
+                    this.$router.push({ name: 'HomePainel' });
                 } else {
-                    alert('Erro ao fazer login: ' + response.data.error);
+                    alert('Erro ao fazer login: ' + (response.data.error || 'Credenciais inválidas'));
                 }
             } catch (error) {
-                alert('Erro ao fazer login: ' + (error.response?.data?.error || 'Credenciais inválidas'));
+                if (error.response) {
+                    if (error.response.status === 400) {
+                        alert('Credenciais inválidas. Verifique seu email e senha.');
+                    } else if (error.response.status === 500) {
+                        alert('Erro no servidor. Tente novamente mais tarde.');
+                    } else {
+                        alert('Erro ao fazer login: ' + (error.response.data.error || 'Erro desconhecido'));
+                    }
+                } else if (error.request) {
+                    alert('Erro de conexão. Verifique sua internet.');
+                } else {
+                    alert('Erro ao fazer login: ' + error.message);
+                }
             }
         },
         async handleRegister() {
