@@ -278,18 +278,13 @@ main {
     /* Espaçamento interno */
 }
 
-/* Bordas e estilos do painel */
 .w-\[400px\] {
     width: 400px;
     border: 1px solid #615c8e;
-    /* Borda do painel */
     border-radius: 12px;
-    /* Bordas arredondadas */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    /* Sombra suave */
 }
 
-/* Estilos dos botões de alternância */
 .active-form {
     background-color: #eed4ed;
     color: #282641;

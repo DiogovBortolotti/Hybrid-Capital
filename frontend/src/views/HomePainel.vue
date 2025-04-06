@@ -9,8 +9,9 @@
             <p class="text-[#615c8e]">Resumo da sua situação financeira</p>
           </div>
           <button
-            class="bg-[#282641] text-white px-6 py-2 rounded-md hover:bg-[#615c8e] transition-colors duration-300 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:translate-y-[-2px]">
-            <span class="material-symbols-outlined">add</span> <span>Novo Lançamento</span>
+            class="bg-[#282641] text-white px-6 py-2 rounded-md hover:bg-[#615c8e] transition-colors duration-300 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:translate-y-[-2px]"
+            @click="$router.push('/lancamento')" >
+            <span class=" material-symbols-outlined">add</span> <span>Novo Lançamento</span>
           </button>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
