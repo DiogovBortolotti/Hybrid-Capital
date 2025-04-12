@@ -3,6 +3,8 @@ import HomeView from '../views/Home.vue'
 import AboutView from '../views/AboutView.vue'
 import PainelView from '../views/Painel.vue'
 import Termos from '../views/Termos.vue'
+import HomePainel from '../views/HomePainel.vue'
+import Lancamento from '../views/Lancamento.vue'
 
 const routes = [
     {
@@ -25,7 +27,16 @@ const routes = [
     name: 'termos',
     component: Termos
   },
-
+    {
+    path: '/home-painel',
+    name: 'HomePainel',
+    component: HomePainel
+  },
+    {
+    path: '/lancamento',
+    name: 'Lancamento',
+    component: Lancamento
+  },
 ]
 
 const router = createRouter({
