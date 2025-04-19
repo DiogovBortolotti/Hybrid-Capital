@@ -4,4 +4,5 @@ from django.contrib import admin
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('account/', include('accounts.urls')),
+    path('api/', include('financas.urls')),
 ]

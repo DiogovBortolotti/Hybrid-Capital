@@ -1,4 +1,15 @@
 <template>
+  <div class="fixed top-4 right-4 z-50 space-y-2">
+    <div v-for="(notif, index) in notifications" 
+         :key="index"
+         :class="['p-4 rounded-lg shadow-lg text-white flex items-center',
+                  notif.type === 'success' ? 'bg-green-500' : 'bg-red-500']">
+      <span class="material-symbols-outlined mr-2">
+        {{ notif.type === 'success' ? 'check_circle' : 'error' }}
+      </span>
+      {{ notif.message }}
+    </div>
+  </div>
   <Header />
   <div id="root" class="flex justify-center items-center min-h-screen p-4">
     <div class="w-[1200px] bg-white rounded-lg shadow-lg overflow-hidden font-sans">
@@ -10,73 +21,65 @@
               <span class="material-symbols-outlined mr-2">account_balance</span> Informações Básicas
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <!-- Banco Field -->
-              <div class="relative">
-                <label class="block text-sm font-medium text-[#615c8e] mb-1" for="banco">
-                  Banco <span class="text-red-500 ml-1">*</span>
-                </label>
-                <select v-model="transaction.banco"
-                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:border-[#a79de9] transition-all appearance-none">
-                  <option value="" disabled selected>Selecione o banco</option>
-                  <option value="Nubank">Nubank</option>
-                  <option value="Itaú">Itaú</option>
-                  <option value="Bradesco">Bradesco</option>
-                  <option value="Santander">Santander</option>
-                  <option value="Banco do Brasil">Banco do Brasil</option>
-                </select>
-                <span
-                  class="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-[#615c8e] pointer-events-none"></span>
-              </div>
-              <div class="relative">
-                <label class="block text-sm font-medium text-[#615c8e] mb-1" for="categoria">
-                  Categoria <span class="text-red-500 ml-1">*</span>
-                </label>
-                <!-- Categoria Field -->
-                <select v-model="transaction.categoria"
-                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:border-[#a79de9] transition-all appearance-none">
-                  <option value="" disabled selected>Selecione a categoria</option>
-                  <option value="Alimentação">Alimentação</option>
-                  <option value="Transporte">Transporte</option>
-                  <option value="Lazer">Lazer</option>
-                  <option value="Compras">Compras</option>
-                  <option value="Saúde">Saúde</option>
-                </select>
-                <span
-                  class="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-[#615c8e] pointer-events-none"></span>
-              </div>
-              <!-- Tipo Field -->
-              <div class="relative w-48">
-                <label class="block text-sm font-medium text-[#615c8e] mb-1" for="tipo">
-                  Tipo <span class="text-red-500 ml-1">*</span>
-                </label>
-                <select v-model="transaction.tipo"
-                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:border-[#a79de9] transition-all appearance-none">
-                  <option value="" disabled selected>Selecione tipo</option>
-                  <option value="Entrada">Entrada</option>
-                  <option value="Saída">Saída</option>
-                </select>
-                <span
-                  class="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-[#615c8e] pointer-events-none"></span>
-              </div>
-
-              <!-- Forma Field -->
-              <div class="relative w-48">
-                <label class="block text-sm font-medium text-[#615c8e] mb-1" for="forma">
-                  Forma <span class="text-red-500 ml-1">*</span>
-                </label>
-                <select v-model="transaction.forma"
-                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:border-[#a79de9] transition-all appearance-none">
-                  <option value="" disabled selected>Selecione a forma</option>
-                  <option value="Débito">Débito</option>
-                  <option value="Crédito">Crédito</option>
-                  <option value="Pix">Pix</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Transferência">Transferência</option>
-                </select>
-                <span
-                  class="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-[#615c8e] pointer-events-none"></span>
-              </div>
-
+  <!-- Banco Field -->
+  <div class="relative">
+    <label class="block text-sm font-medium text-[#615c8e] mb-1" for="banco">
+      Banco <span class="text-red-500 ml-1">*</span>
+    </label>
+    <select v-model="transaction.banco"
+      class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:border-[#a79de9] transition-all appearance-none">
+      <option value="" disabled selected>Selecione o banco</option>
+      <option v-for="(label, value) in bancoChoices" :key="value" :value="value">
+        {{ label }}
+      </option>
+    </select>
+    <span class="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-[#615c8e] pointer-events-none"></span>
+  </div>
+  
+  <!-- Categoria Field -->
+  <div class="relative">
+    <label class="block text-sm font-medium text-[#615c8e] mb-1" for="categoria">
+      Categoria <span class="text-red-500 ml-1">*</span>
+    </label>
+    <select v-model="transaction.categoria"
+      class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:border-[#a79de9] transition-all appearance-none">
+      <option value="" disabled selected>Selecione a categoria</option>
+      <option v-for="(label, value) in categoriaChoices" :key="value" :value="value">
+        {{ label }}
+      </option>
+    </select>
+    <span class="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-[#615c8e] pointer-events-none"></span>
+  </div>
+  
+  <!-- Tipo Field -->
+  <div class="relative w-48">
+    <label class="block text-sm font-medium text-[#615c8e] mb-1" for="tipo">
+      Tipo <span class="text-red-500 ml-1">*</span>
+    </label>
+    <select v-model="transaction.tipo"
+      class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:border-[#a79de9] transition-all appearance-none">
+      <option value="" disabled selected>Selecione tipo</option>
+      <option v-for="(label, value) in tipoChoices" :key="value" :value="value">
+        {{ label }}
+      </option>
+    </select>
+    <span class="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-[#615c8e] pointer-events-none"></span>
+  </div>
+  
+  <!-- Forma Field -->
+  <div class="relative w-48">
+    <label class="block text-sm font-medium text-[#615c8e] mb-1" for="forma">
+      Forma <span class="text-red-500 ml-1">*</span>
+    </label>
+    <select v-model="transaction.forma"
+      class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:border-[#a79de9] transition-all appearance-none">
+      <option value="" disabled selected>Selecione a forma</option>
+      <option v-for="(label, value) in formaChoices" :key="value" :value="value">
+        {{ label }}
+      </option>
+    </select>
+    <span class="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-[#615c8e] pointer-events-none"></span>
+  </div>
               <!-- Valor Field -->
               <div class="relative w-48">
                 <label class="block text-sm font-medium text-[#615c8e] mb-1" for="valor">
@@ -414,17 +417,24 @@
             </div>
           </details>
 
-          <!-- Buttons -->
-          <div class="flex justify-end space-x-4 mt-6">
-            <button
-              class="border border-[#615c8e] text-[#615c8e] hover:bg-[#eed4ed] hover:bg-opacity-30 font-medium py-2.5 px-6 rounded-lg transition-colors">
-              Cancelar
-            </button>
-            <button
-              class="bg-[#615c8e] hover:bg-[#282641] text-white font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center">
-              <span class="material-symbols-outlined mr-2">save</span> Salvar Transação
-            </button>
-          </div>
+<!-- Buttons -->
+<div class="flex justify-end space-x-4 mt-6">
+  <button
+    @click="cancelTransaction"
+    class="border border-[#615c8e] text-[#615c8e] hover:bg-[#eed4ed] hover:bg-opacity-30 font-medium py-2.5 px-6 rounded-full transition-colors">
+    Cancelar
+  </button>
+  
+  <button 
+    @click="submitTransaction"
+    :disabled="!isFormValid || isSaving"
+    class="bg-[#615c8e] hover:bg-[#282641] text-white font-medium py-2.5 px-6 rounded-full transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+    <span v-if="isSaving" class="material-symbols-outlined mr-2 animate-spin">refresh</span>
+    <span v-else class="material-symbols-outlined mr-2">save</span> 
+    {{ isSaving ? 'Salvando...' : 'Salvar Transação' }}
+  </button>
+</div>
+
         </div>
 
         <!-- Summary Section -->
@@ -503,8 +513,9 @@
     </div>
   </div>
 </template>
-
 <script>
+import axios from 'axios';
+import Swal from 'sweetalert2';
 import Header from '../components/Header.vue';
 import { Html5Qrcode } from 'html5-qrcode';
 
@@ -515,6 +526,9 @@ export default {
 
   data() {
     return {
+      apiUrl: process.env.VUE_APP_API_URL,
+      isSaving: false,
+      notifications: [],
       transaction: {
         banco: '',
         categoria: '',
@@ -523,8 +537,15 @@ export default {
         valor: '',
         parcelas: 1,
         descricao: '',
-        data: this.getCurrentDate()
+        data: this.getCurrentDate(),
+        status_pagamento: 'Pendente'
       },
+            loadingChoices: true,
+            bancoChoices: {},
+      categoriaChoices: {},
+      tipoChoices: {},
+      formaChoices: {},
+      statusPagamentoChoices: {},
       compartilhamento: {
         ativo: false,
         usuarios: [],
@@ -569,17 +590,234 @@ export default {
   },
 
   computed: {
+    isFormValid() {
+      const requiredFields = [
+        'banco', 'categoria', 'tipo', 'forma', 'valor', 'descricao', 'data'
+      ];
+      
+      const basicValid = requiredFields.every(field => 
+        this.transaction[field] && this.transaction[field].toString().trim()
+      );
+      
+      const valueValid = this.transaction.valor && 
+        !isNaN(parseFloat(this.transaction.valor.replace(/\./g, '').replace(',', '.')));
+      
+      return basicValid && valueValid;
+    },
+    
     filteredUsers() {
       return this.availableUsers.filter(user =>
         user.name.toLowerCase().includes(this.userSearch.toLowerCase())
       );
     },
+    
     totalSharedPercentage() {
       return this.compartilhamento.usuarios.reduce((sum, user) => sum + user.porcentagem, 0);
     }
   },
 
   methods: {
+      getToken() {
+  // Sempre usar a mesma chave 'token' em todo o código
+  return localStorage.getItem('token');
+},
+   async submitTransaction() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    this.showToast('error', 'Erro', 'Faça login novamente');
+    this.$router.push('/painel');
+    return;
+  }
+
+  this.isSaving = true;
+  
+  try {
+    // Validação do status_pagamento
+    if (this.transaction.forma !== 'Crédito') {
+      this.transaction.status_pagamento = 'Pago';
+    }
+
+    const transactionData = {
+      ...this.transaction,
+      valor: parseFloat(this.transaction.valor.replace(/\./g, '').replace(',', '.'))
+    };
+
+    // DEBUG: Mostra os dados que estão sendo enviados
+    console.log('Enviando dados:', transactionData);
+    console.log('Token usado:', token);
+
+    const response = await axios.post(`${this.apiUrl}/api/transactions/`, transactionData, {
+      headers: {
+        'Authorization': `Token ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // DEBUG: Mostra a resposta do servidor
+    console.log('Resposta do servidor:', response.data);
+    
+    this.showToast('success', 'Sucesso', 'Transação salva com sucesso!');
+    this.resetForm();
+    
+  } catch (error) {
+    // DEBUG: Mostra o erro completo
+    console.error('Erro completo:', error);
+    
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      this.showToast('error', 'Sessão expirada', 'Faça login novamente');
+      this.$router.push('/painel');
+    } else {
+      const errorMsg = error.response?.data?.detail || 
+                      error.message || 
+                      'Erro ao salvar transação';
+      this.showToast('error', 'Erro', errorMsg);
+    }
+  } finally {
+    this.isSaving = false;
+  }
+},
+   handleError(error) {
+  let errorMessage = 'Erro ao processar a requisição';
+  
+  if (error.response) {
+    console.error('Detalhes do erro:', {
+      status: error.response.status,
+      data: error.response.data,
+      headers: error.response.headers
+    });
+
+    switch (error.response.status) {
+      case 401:
+        errorMessage = 'Sessão expirada. Por favor, faça login novamente.';
+        localStorage.removeItem('token');
+        this.$router.push('/painel');
+        break;
+      case 403:
+        errorMessage = 'Você não tem permissão para esta ação.';
+        break;
+      case 400:
+        errorMessage = 'Dados inválidos: ';
+        if (error.response.data) {
+          errorMessage += JSON.stringify(error.response.data);
+        }
+        break;
+      default:
+        errorMessage = this.parseBackendError(error.response.data);
+    }
+  } else if (error.request) {
+    errorMessage = 'Sem resposta do servidor';
+  } else {
+    errorMessage = error.message;
+  }
+  
+  this.showToast('error', 'Erro', errorMessage);
+},
+
+parseBackendError(data) {
+  if (typeof data === 'string') return data;
+  if (data.detail) return data.detail;
+  if (data.non_field_errors) return data.non_field_errors.join(', ');
+  
+  let messages = [];
+  for (const [key, value] of Object.entries(data)) {
+    messages.push(`${key}: ${Array.isArray(value) ? value.join(', ') : value}`);
+  }
+  
+  return messages.join('; ');
+},
+  async fetchChoices() {
+  this.loadingChoices = true;
+  const token = this.getToken();
+  
+  if (!token) {
+    console.error('Token não disponível');
+    this.loadingChoices = false;
+    return;
+  }
+  
+  try {
+    const response = await axios.get(`${this.apiUrl}/api/transaction-choices/`, {
+      headers: {
+        'Authorization': `Token ${token}`
+      }
+    });
+    
+    console.log('Dados recebidos:', response.data);
+    
+    // Atribui os dados corretamente
+    this.bancoChoices = response.data.bancos || {};
+    this.categoriaChoices = response.data.categorias || {};
+    this.tipoChoices = response.data.tipos || {};
+    this.formaChoices = response.data.formas || {};
+    this.statusPagamentoChoices = response.data.status_pagamento || {};
+    
+    console.log('Choices após atribuição:', {
+      bancos: this.bancoChoices,
+      categorias: this.categoriaChoices,
+      tipos: this.tipoChoices,
+      formas: this.formaChoices,
+      status: this.statusPagamentoChoices
+    });
+    
+  } catch (error) {
+    console.error('Erro ao buscar choices:', error);
+    this.handleError(error);
+  } finally {
+    this.loadingChoices = false;
+  }
+},
+    resetForm() {
+      this.transaction = {
+        banco: '',
+        categoria: '',
+        tipo: '',
+        forma: '',
+        valor: '',
+        parcelas: 1,
+        descricao: '',
+        data: this.getCurrentDate(),
+        status_pagamento: 'Pendente'
+      };
+      this.compartilhamento.usuarios = [];
+      this.compartilhamento.porcentagemTotal = 50;
+    },
+
+    showToast(icon, title, text = '') {
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer);
+          toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+      });
+      
+      Toast.fire({
+        icon,
+        title,
+        text: text.length > 100 ? text.substring(0, 100) + '...' : text
+      });
+    },
+
+    addNotification(type, title, message) {
+      const notification = { 
+        type, 
+        title, 
+        message,
+        id: Date.now() 
+      };
+      
+      this.notifications.push(notification);
+      
+      setTimeout(() => {
+        this.notifications = this.notifications.filter(n => n.id !== notification.id);
+      }, 5000);
+    },
+
     getCurrentDate() {
       const today = new Date();
       const year = today.getFullYear();
@@ -607,17 +845,27 @@ export default {
       }
     },
 
-    formatCurrencyValue(value) {
-      if (!value || isNaN(value)) return 'R$ 0,00';
-      if (typeof value === 'string') {
-        value = parseFloat(value.replace(/\./g, '').replace(',', '.'));
-      }
-      return 'R$ ' + value.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    },
-
+formatCurrencyValue(value) {
+  if (!value) return 'R$ 0,00';
+  
+  // Se já for número, formata diretamente
+  if (typeof value === 'number') {
+    return 'R$ ' + value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+  
+  // Se for string, converte para número primeiro
+  const numericValue = typeof value === 'string' 
+    ? parseFloat(value.replace(/\./g, '').replace(',', '.')) 
+    : value;
+    
+  return 'R$ ' + numericValue.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+},
 
     getInitials(name) {
       if (!name || typeof name !== 'string') return '';
@@ -626,7 +874,6 @@ export default {
 
     calculateIndividualValue() {
       if (!this.transaction.valor) return 0;
-
       const numericValue = parseFloat(this.transaction.valor.replace(/\./g, '').replace(',', '.'));
 
       if (this.compartilhamento.usuarios.length > 0) {
@@ -640,18 +887,15 @@ export default {
       if (!this.transaction.valor || this.compartilhamento.usuarios.length === 0) {
         return 0;
       }
-
       const numericValue = parseFloat(this.transaction.valor.replace(/\./g, '').replace(',', '.'));
       return numericValue * (this.compartilhamento.porcentagemTotal / 100);
     },
 
     calculateUserShare(user) {
       if (!this.transaction.valor) return 0;
-
       const numericValue = parseFloat(this.transaction.valor.replace(/\./g, '').replace(',', '.'));
       const sharedAmount = numericValue * (this.compartilhamento.porcentagemTotal / 100);
       const userPercentage = user.porcentagem / this.totalSharedPercentage;
-
       return sharedAmount * userPercentage;
     },
 
@@ -662,7 +906,6 @@ export default {
 
     calculateInstallmentValue(installmentNumber) {
       if (!this.transaction.valor) return 0;
-
       const numericValue = parseFloat(this.transaction.valor.replace(/\./g, '').replace(',', '.'));
       const totalParcels = parseInt(this.transaction.parcelas) || 1;
       return numericValue / totalParcels;
@@ -688,7 +931,6 @@ export default {
     distributePercentages() {
       const userCount = this.compartilhamento.usuarios.length;
       if (userCount === 0) return;
-
       const equalShare = 100 / userCount;
       this.compartilhamento.usuarios.forEach(user => {
         user.porcentagem = equalShare;
@@ -703,7 +945,6 @@ export default {
 
     normalizePercentages() {
       const total = this.totalSharedPercentage;
-
       if (total > 100) {
         const ratio = 100 / total;
         this.compartilhamento.usuarios.forEach(user => {
@@ -728,26 +969,14 @@ export default {
 
     startQRScanner() {
       this.qrScannerActive = true;
-
       this.$nextTick(() => {
-        const qrboxFunction = function (viewfinderWidth, viewfinderHeight) {
-          const minEdgePercentage = 0.7;
-          const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-          return {
-            width: qrboxSize,
-            height: qrboxSize
-          };
-        };
-
         const config = {
           fps: 10,
-          qrbox: qrboxFunction,
+          qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0
         };
 
         this.qrScanner = new Html5Qrcode("qr-reader");
-
         this.qrScanner.start(
           { facingMode: "environment" },
           config,
@@ -755,7 +984,7 @@ export default {
           this.onQRScanError
         ).catch(err => {
           console.error("Erro ao iniciar scanner:", err);
-          alert("Não foi possível acessar a câmera. Verifique as permissões.");
+          this.showToast('error', 'Erro', 'Não foi possível acessar a câmera');
           this.qrScannerActive = false;
         });
       });
@@ -785,23 +1014,18 @@ export default {
     parseQRCodeData(qrData) {
       try {
         if (qrData.includes('|')) {
-          const parts = qrData.split('|');
-
           const valorMatch = qrData.match(/[vV]alorTotal=([0-9,]+)/);
           if (valorMatch && valorMatch[1]) {
-            const valorNumerico = parseFloat(valorMatch[1].replace(',', '.'));
-            this.transaction.valor = valorNumerico.toFixed(2).replace('.', ',');
+            this.transaction.valor = parseFloat(valorMatch[1].replace(',', '.')).toFixed(2).replace('.', ',');
           }
-
 
           const dataMatch = qrData.match(/[dD]ata=(\d{8})/);
           if (dataMatch && dataMatch[1]) {
             const dataStr = dataMatch[1];
-            const formattedDate = `${dataStr.substring(0, 4)}-${dataStr.substring(4, 6)}-${dataStr.substring(6, 8)}`;
-            this.transaction.data = formattedDate;
+            this.transaction.data = `${dataStr.substring(0, 4)}-${dataStr.substring(4, 6)}-${dataStr.substring(6, 8)}`;
           }
 
-
+          // Categorias automáticas
           if (qrData.toLowerCase().includes('supermercado') || qrData.toLowerCase().includes('mercado')) {
             this.transaction.categoria = 'Alimentação';
           } else if (qrData.toLowerCase().includes('posto') || qrData.toLowerCase().includes('combustível')) {
@@ -809,7 +1033,6 @@ export default {
           } else if (qrData.toLowerCase().includes('farmacia') || qrData.toLowerCase().includes('drogaria')) {
             this.transaction.categoria = 'Saúde';
           }
-
 
           this.transaction.forma = 'Débito';
 
@@ -828,6 +1051,30 @@ export default {
     }
   },
 
+async created() {
+  // Verificação do token
+  if (!localStorage.getItem('authToken')) {
+    const token = this.getToken();
+    if (token) {
+      localStorage.setItem('authToken', token);
+      
+      if (window.location.search.includes('token')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }
+  
+  // Carrega as choices
+  try {
+    await this.fetchChoices();
+  } catch (error) {
+    console.error('Erro ao carregar opções:', error);
+    this.showToast('error', 'Erro', 'Não foi possível carregar as opções');
+  }
+  
+  console.log('Token atual:', this.getToken());
+},
+
   beforeUnmount() {
     if (this.qrScannerActive && this.qrScanner) {
       this.stopQRScanner();
@@ -835,10 +1082,26 @@ export default {
   }
 };
 </script>
-
 <style scoped>
 @import url(https://fonts.googleapis.com/css2?family=Open+Sans&display=swap);
 @import url(https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200);
+
+
+
+.swal2-toast {
+  font-family: 'Open Sans', sans-serif;
+  border-radius: 8px !important;
+}
+
+.swal2-toast.swal2-success {
+  background: #615c8e !important;
+  color: white !important;
+}
+
+.swal2-toast.swal2-error {
+  background: #ff4444 !important;
+  color: white !important;
+}
 
 #root .flex {
   display: flex;

@@ -26,14 +26,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', "j+1!j17l2e&^c7-fp$p0x!lro6@z*@3yvfdq_+8*=0==4ofjr2")
 
 
 DEBUG = os.getenv('DEBUG', 'True').upper() == 'TRUE'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+ALLOWED_HOSTS = ["*"]
 
 # Configurações do CORS
-CORS_ALLOWED_ORIGINS = [(os.getenv('CORS_ALLOWED_ORIGINS'))]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://192.168.1.110:8080",  # Adicione seu IP de rede
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://localhost",
+    "http://127.0.0.1"
+]
 
 
 CORS_ALLOW_CREDENTIALS = True
@@ -73,6 +81,15 @@ INSTALLED_APPS = [
     'accounts',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -85,6 +102,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'settings.urls'
+
 
 TEMPLATES = [
     {
