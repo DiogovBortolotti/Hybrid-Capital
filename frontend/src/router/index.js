@@ -5,6 +5,8 @@ import PainelView from '../views/Painel.vue'
 import Termos from '../views/Termos.vue'
 import HomePainel from '../views/HomePainel.vue'
 import Lancamento from '../views/Lancamento.vue'
+import FriendList from '../views/FriendList.vue'
+import Novo from '../views/novo.vue'
 
 const routes = [
     {
@@ -36,6 +38,16 @@ const routes = [
     path: '/lancamento',
     name: 'Lancamento',
     component: Lancamento
+  },
+  {
+    path: '/friendList',
+    name: 'FriendList',
+    component: FriendList
+  },
+  {
+    path: '/novo',
+    name: 'Novo',
+    component: Novo
   },
 ]
 

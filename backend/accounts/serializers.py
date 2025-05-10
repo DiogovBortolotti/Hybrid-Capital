@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from .models import CustomUser, Invitation
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
-
 
 class CustomUserSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True)
@@ -36,3 +36,47 @@ class CustomUserSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'email', 'full_name']
+        read_only_fields = ['id', 'email', 'full_name']
+
+
+class InvitationSerializer(serializers.ModelSerializer):
+    sender = UserSerializer(read_only=True)
+    recipient = UserSerializer(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Invitation
+        fields = ['id', 'sender', 'recipient', 'status', 'status_display', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+class SendInvitationSerializer(serializers.Serializer):
+    recipient_email = serializers.EmailField(write_only=True)
+    
+    def validate_recipient_email(self, value):
+        try:
+            recipient = CustomUser.objects.get(email=value)
+            if Invitation.objects.filter(sender=self.context['request'].user, recipient=recipient).exists():
+                raise serializers.ValidationError("Você já enviou um convite para este usuário.")
+            return recipient
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError("Usuário não encontrado.")
+
+class HandleInvitationSerializer(serializers.Serializer):
+    invitation_id = serializers.IntegerField()
+    
+    def validate_invitation_id(self, value):
+        try:
+            invitation = Invitation.objects.get(
+                id=value,
+                recipient=self.context['request'].user,
+                status='pending'
+            )
+            return invitation
+        except Invitation.DoesNotExist:
+            raise serializers.ValidationError("Convite inválido ou já processado.")

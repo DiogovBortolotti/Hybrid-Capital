@@ -1,3 +1,5 @@
+MUDAR TOKEN POR BEARBED
+
 # Hybrid Capital
 
 Este projeto é uma plataforma que visa centralizar informações importantes para os usuários sobre seus gastos, investimentos e rendimentos. Através de uma interface intuitiva, o site permitirá aos usuários gerenciar suas finanças de forma eficiente e tomar decisões mais informadas.

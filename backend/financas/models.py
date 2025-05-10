@@ -66,3 +66,6 @@ class Transaction(models.Model):
         """Garante que as validações sejam executadas antes de salvar"""
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+
