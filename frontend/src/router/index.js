@@ -6,8 +6,7 @@ import Termos from '../views/Termos.vue'
 import HomePainel from '../views/HomePainel.vue'
 import Lancamento from '../views/Lancamento.vue'
 import FriendList from '../views/FriendList.vue'
-import Novo from '../views/novo.vue'
-
+import Pagamentos from '../views/Pagamentos.vue'
 const routes = [
     {
     path: '/',
@@ -45,10 +44,10 @@ const routes = [
     component: FriendList
   },
   {
-    path: '/novo',
-    name: 'Novo',
-    component: Novo
-  },
+    path: '/Pagamentos',
+    name: 'Pagamentos',
+    component: Pagamentos
+  }
 ]
 
 const router = createRouter({

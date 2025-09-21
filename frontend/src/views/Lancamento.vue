@@ -540,8 +540,8 @@ export default {
         data: this.getCurrentDate(),
         status_pagamento: 'Pendente'
       },
-            loadingChoices: true,
-            bancoChoices: {},
+      loadingChoices: true,
+      bancoChoices: {},
       categoriaChoices: {},
       tipoChoices: {},
       formaChoices: {},
@@ -564,13 +564,7 @@ export default {
         qrcode: ''
       },
       userSearch: '',
-      availableUsers: [
-        { id: 1, name: 'João Dias' },
-        { id: 2, name: 'Maria Silva' },
-        { id: 3, name: 'Luiz Santos' },
-        { id: 4, name: 'Ana Oliveira' },
-        { id: 5, name: 'Carlos Souza' }
-      ],
+      availableUsers: [], // Removidos os dados estáticos
       diasDaSemana: [
         { value: 'seg', label: 'Segunda-feira' },
         { value: 'ter', label: 'Terça-feira' },
@@ -617,10 +611,37 @@ export default {
   },
 
   methods: {
-      getToken() {
-  // Sempre usar a mesma chave 'token' em todo o código
-  return localStorage.getItem('token');
-},
+    getToken() {
+      return localStorage.getItem('token');
+    },
+
+    async fetchFriends() {
+      const token = this.getToken();
+      if (!token) {
+        console.error('Token não disponível');
+        return;
+      }
+      
+      try {
+        const response = await axios.get(`${this.apiUrl}/account/api/users/me/friends/`, {
+          headers: {
+            'Authorization': `Token ${token}`
+          }
+        });
+        
+        // Mapeia os amigos para o formato esperado pelo componente
+        this.availableUsers = response.data.map(friend => ({
+          id: friend.id,
+          name: friend.full_name,
+          initials: friend.initials
+        }));
+        
+      } catch (error) {
+        console.error('Erro ao buscar amigos:', error);
+        this.handleError(error);
+      }
+    },
+
    async submitTransaction() {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -637,14 +658,17 @@ export default {
       this.transaction.status_pagamento = 'Pago';
     }
 
+    // Preparar os dados para envio
     const transactionData = {
       ...this.transaction,
-      valor: parseFloat(this.transaction.valor.replace(/\./g, '').replace(',', '.'))
+      valor: parseFloat(this.transaction.valor.replace(/\./g, '').replace(',', '.')),
+      shared_percentage: this.compartilhamento.porcentagemTotal,
+      shares: this.compartilhamento.usuarios.map(user => ({
+        shared_with_id: user.id,
+        percentage: user.porcentagem,
+        installments: user.parcelas
+      }))
     };
-
-    // DEBUG: Mostra os dados que estão sendo enviados
-    console.log('Enviando dados:', transactionData);
-    console.log('Token usado:', token);
 
     const response = await axios.post(`${this.apiUrl}/api/transactions/`, transactionData, {
       headers: {
@@ -652,17 +676,13 @@ export default {
         'Content-Type': 'application/json'
       }
     });
-
-    // DEBUG: Mostra a resposta do servidor
-    console.log('Resposta do servidor:', response.data);
     
     this.showToast('success', 'Sucesso', 'Transação salva com sucesso!');
     this.resetForm();
     
   } catch (error) {
-    // DEBUG: Mostra o erro completo
     console.error('Erro completo:', error);
-    
+    console.error('Resposta do backend:', error.response.data);
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       this.showToast('error', 'Sessão expirada', 'Faça login novamente');
@@ -677,96 +697,88 @@ export default {
     this.isSaving = false;
   }
 },
-   handleError(error) {
-  let errorMessage = 'Erro ao processar a requisição';
-  
-  if (error.response) {
-    console.error('Detalhes do erro:', {
-      status: error.response.status,
-      data: error.response.data,
-      headers: error.response.headers
-    });
 
-    switch (error.response.status) {
-      case 401:
-        errorMessage = 'Sessão expirada. Por favor, faça login novamente.';
-        localStorage.removeItem('token');
-        this.$router.push('/painel');
-        break;
-      case 403:
-        errorMessage = 'Você não tem permissão para esta ação.';
-        break;
-      case 400:
-        errorMessage = 'Dados inválidos: ';
-        if (error.response.data) {
-          errorMessage += JSON.stringify(error.response.data);
+    handleError(error) {
+      let errorMessage = 'Erro ao processar a requisição';
+      
+      if (error.response) {
+        console.error('Detalhes do erro:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+
+        switch (error.response.status) {
+          case 401:
+            errorMessage = 'Sessão expirada. Por favor, faça login novamente.';
+            localStorage.removeItem('token');
+            this.$router.push('/painel');
+            break;
+          case 403:
+            errorMessage = 'Você não tem permissão para esta ação.';
+            break;
+          case 400:
+            errorMessage = 'Dados inválidos: ';
+            if (error.response.data) {
+              errorMessage += JSON.stringify(error.response.data);
+            }
+            break;
+          default:
+            errorMessage = this.parseBackendError(error.response.data);
         }
-        break;
-      default:
-        errorMessage = this.parseBackendError(error.response.data);
-    }
-  } else if (error.request) {
-    errorMessage = 'Sem resposta do servidor';
-  } else {
-    errorMessage = error.message;
-  }
-  
-  this.showToast('error', 'Erro', errorMessage);
-},
-
-parseBackendError(data) {
-  if (typeof data === 'string') return data;
-  if (data.detail) return data.detail;
-  if (data.non_field_errors) return data.non_field_errors.join(', ');
-  
-  let messages = [];
-  for (const [key, value] of Object.entries(data)) {
-    messages.push(`${key}: ${Array.isArray(value) ? value.join(', ') : value}`);
-  }
-  
-  return messages.join('; ');
-},
-  async fetchChoices() {
-  this.loadingChoices = true;
-  const token = this.getToken();
-  
-  if (!token) {
-    console.error('Token não disponível');
-    this.loadingChoices = false;
-    return;
-  }
-  
-  try {
-    const response = await axios.get(`${this.apiUrl}/api/transaction-choices/`, {
-      headers: {
-        'Authorization': `Token ${token}`
+      } else if (error.request) {
+        errorMessage = 'Sem resposta do servidor';
+      } else {
+        errorMessage = error.message;
       }
-    });
-    
-    console.log('Dados recebidos:', response.data);
-    
-    // Atribui os dados corretamente
-    this.bancoChoices = response.data.bancos || {};
-    this.categoriaChoices = response.data.categorias || {};
-    this.tipoChoices = response.data.tipos || {};
-    this.formaChoices = response.data.formas || {};
-    this.statusPagamentoChoices = response.data.status_pagamento || {};
-    
-    console.log('Choices após atribuição:', {
-      bancos: this.bancoChoices,
-      categorias: this.categoriaChoices,
-      tipos: this.tipoChoices,
-      formas: this.formaChoices,
-      status: this.statusPagamentoChoices
-    });
-    
-  } catch (error) {
-    console.error('Erro ao buscar choices:', error);
-    this.handleError(error);
-  } finally {
-    this.loadingChoices = false;
-  }
-},
+      
+      this.showToast('error', 'Erro', errorMessage);
+    },
+
+    parseBackendError(data) {
+      if (typeof data === 'string') return data;
+      if (data.detail) return data.detail;
+      if (data.non_field_errors) return data.non_field_errors.join(', ');
+      
+      let messages = [];
+      for (const [key, value] of Object.entries(data)) {
+        messages.push(`${key}: ${Array.isArray(value) ? value.join(', ') : value}`);
+      }
+      
+      return messages.join('; ');
+    },
+
+    async fetchChoices() {
+      this.loadingChoices = true;
+      const token = this.getToken();
+      
+      if (!token) {
+        console.error('Token não disponível');
+        this.loadingChoices = false;
+        return;
+      }
+      
+      try {
+        const response = await axios.get(`${this.apiUrl}/api/transaction-choices/`, {
+          headers: {
+            'Authorization': `Token ${token}`
+          }
+        });
+        
+        this.bancoChoices = response.data.bancos || {};
+        this.categoriaChoices = response.data.categorias || {};
+        this.tipoChoices = response.data.tipos || {};
+        this.formaChoices = response.data.formas || {};
+        this.statusPagamentoChoices = response.data.status_pagamento || {};
+        
+      } catch (error) {
+        console.error('Erro ao buscar choices:', error);
+        this.handleError(error);
+      } finally {
+        this.loadingChoices = false;
+      }
+    },
+
     resetForm() {
       this.transaction = {
         banco: '',
@@ -845,27 +857,27 @@ parseBackendError(data) {
       }
     },
 
-formatCurrencyValue(value) {
-  if (!value) return 'R$ 0,00';
-  
-  // Se já for número, formata diretamente
-  if (typeof value === 'number') {
-    return 'R$ ' + value.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  }
-  
-  // Se for string, converte para número primeiro
-  const numericValue = typeof value === 'string' 
-    ? parseFloat(value.replace(/\./g, '').replace(',', '.')) 
-    : value;
-    
-  return 'R$ ' + numericValue.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-},
+    formatCurrencyValue(value) {
+      if (!value) return 'R$ 0,00';
+      
+      // Se já for número, formata diretamente
+      if (typeof value === 'number') {
+        return 'R$ ' + value.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+      
+      // Se for string, converte para número primeiro
+      const numericValue = typeof value === 'string' 
+        ? parseFloat(value.replace(/\./g, '').replace(',', '.')) 
+        : value;
+        
+      return 'R$ ' + numericValue.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    },
 
     getInitials(name) {
       if (!name || typeof name !== 'string') return '';
@@ -1051,29 +1063,30 @@ formatCurrencyValue(value) {
     }
   },
 
-async created() {
-  // Verificação do token
-  if (!localStorage.getItem('authToken')) {
-    const token = this.getToken();
-    if (token) {
-      localStorage.setItem('authToken', token);
-      
-      if (window.location.search.includes('token')) {
-        window.history.replaceState({}, document.title, window.location.pathname);
+  async created() {
+    // Verificação do token
+    if (!localStorage.getItem('authToken')) {
+      const token = this.getToken();
+      if (token) {
+        localStorage.setItem('authToken', token);
+        
+        if (window.location.search.includes('token')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
     }
-  }
-  
-  // Carrega as choices
-  try {
-    await this.fetchChoices();
-  } catch (error) {
-    console.error('Erro ao carregar opções:', error);
-    this.showToast('error', 'Erro', 'Não foi possível carregar as opções');
-  }
-  
-  console.log('Token atual:', this.getToken());
-},
+    
+    // Carrega as choices e os amigos
+    try {
+      await Promise.all([
+        this.fetchChoices(),
+        this.fetchFriends()
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      this.showToast('error', 'Erro', 'Não foi possível carregar os dados');
+    }
+  },
 
   beforeUnmount() {
     if (this.qrScannerActive && this.qrScanner) {
@@ -1679,5 +1692,15 @@ pre {
   border: 1px solid #e1e1e1;
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+:global(body) {
+  background: linear-gradient(135deg, #ffffff, #d4d4d4) !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+}
+
+:global(html) {
+  height: 100% !important;
 }
 </style>

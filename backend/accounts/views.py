@@ -1,23 +1,19 @@
-from rest_framework import generics, status, viewsets
+from django.forms import ValidationError
+from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
-from django.core.mail import send_mail
-from django.conf import settings
-from django.db import models  # For models.Q
 import logging
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .models import FriendRequest, CustomUser
+from .serializers import FriendRequestSerializer, UserSerializer, CustomUserSerializer
+from django.db import IntegrityError
 
-# Relative imports from current app
-from .models import Invitation, CustomUser
-from .serializers import (
-    CustomUserSerializer, 
-    InvitationSerializer,
-    UserSerializer,
-    SendInvitationSerializer,
-    HandleInvitationSerializer
-)
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,79 +90,112 @@ def check_auth(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-class InvitationViewSet(viewsets.GenericViewSet):
-    permission_classes = [IsAuthenticated]
-    queryset = Invitation.objects.all()
-    
-    def get_serializer_class(self):
-        if self.action == 'send':
-            return SendInvitationSerializer
-        elif self.action in ['accept', 'reject']:
-            return HandleInvitationSerializer
-        return InvitationSerializer
-    
-    def list(self, request):
-        queryset = self.queryset.filter(
-            models.Q(sender=request.user) | 
-            models.Q(recipient=request.user)
-        ).select_related('sender', 'recipient')
-        
-        serializer = self.get_serializer(queryset, many=True)
-        return Response({
-            'received': serializer.data,
-            'sent': serializer.data,
-            'current_user': UserSerializer(request.user).data
-        })
-    
-    @action(detail=False, methods=['post'])
-    def send(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        invitation = Invitation.objects.create(
-            sender=request.user,
-            recipient=serializer.validated_data['recipient_email']
-        )
-        
-        return Response(
-            InvitationSerializer(invitation, context=self.get_serializer_context()).data,
-            status=status.HTTP_201_CREATED
-        )
-    
-    @action(detail=False, methods=['post'])
-    def accept(self, request):
-        return self._handle_invitation(request, 'accept')
-    
-    @action(detail=False, methods=['post'])
-    def reject(self, request):
-        return self._handle_invitation(request, 'reject')
-    
-    def _handle_invitation(self, request, action):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        invitation = serializer.validated_data['invitation_id']
-        if action == 'accept':
-            invitation.accept(request.user)
-        else:
-            invitation.reject()
-        
-        return Response(
-            InvitationSerializer(invitation, context=self.get_serializer_context()).data
-        )
+
+from django.db.models import Q
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [IsAuthenticated]
+    queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    
+    permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
-        # Exclui o usuário atual e usuários que já receberam convite
-        sent_to_users = Invitation.objects.filter(
-            sender=self.request.user
-        ).values_list('recipient', flat=True)
+        queryset = super().get_queryset()
+        email = self.request.query_params.get('email', None)
+        if email:
+            queryset = queryset.filter(Q(email__icontains=email))  # Filtra por email
+        return queryset
+
+    @action(detail=False, methods=['get'], url_path='me/friends')
+    def my_friends(self, request):
+        user = request.user
+        sent = FriendRequest.objects.filter(from_user=user, is_accepted=True).values_list('to_user', flat=True)
+        received = FriendRequest.objects.filter(to_user=user, is_accepted=True).values_list('from_user', flat=True)
+        friends_ids = list(sent) + list(received)
+        friends = CustomUser.objects.filter(id__in=friends_ids)
+        return Response(UserSerializer(friends, many=True).data)
+
+
+
+class FriendRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = FriendRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return FriendRequest.objects.filter(to_user=self.request.user, is_accepted=False)
+
+    def perform_create(self, serializer):
+        from_user = self.request.user
+        to_user = serializer.validated_data['to_user']
+
+        if from_user == to_user:
+            raise ValidationError(
+                {"detail": "Você não pode se adicionar como amigo."},
+                code=status.HTTP_400_BAD_REQUEST
+            )
         
-        return CustomUser.objects.exclude(
-            id=self.request.user.id
-        ).exclude(
-            id__in=sent_to_users
-        ).order_by('email')
+        if FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exists():
+            raise ValidationError(
+                {"detail": "Você já enviou um convite para este usuário ou já são amigos."},
+                code=status.HTTP_400_BAD_REQUEST
+            )
+    
+        serializer.save(from_user=from_user)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (ValidationError, IntegrityError)):
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().handle_exception(exc)
+
+    @action(detail=True, methods=['post'], url_path='accept')
+    def accept(self, request, pk=None):
+        friend_request = self.get_object()
+        if friend_request.to_user != request.user:
+            return Response({'error': 'Você não tem permissão.'}, status=403)
+        friend_request.accept()
+        return Response({'status': 'convite aceito'})
+
+    @action(detail=False, methods=['delete'], url_path='remove-friend/(?P<friend_id>[^/.]+)')
+    def remove_friend(self, request, friend_id=None):
+        try:
+            friend = CustomUser.objects.get(id=friend_id)
+            user = request.user
+            
+            FriendRequest.objects.filter(
+                (Q(from_user=user, to_user=friend) | Q(from_user=friend, to_user=user)),
+                is_accepted=True
+            ).delete()
+            
+            return Response({'status': 'amizade removida'}, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'Usuário não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='list-users')
+    def list_users(self, request):
+        search_query = request.query_params.get('search', '')
+        email_query = request.query_params.get('email', '')
+        
+        queryset = CustomUser.objects.exclude(id=request.user.id)
+        
+        if search_query:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search_query) | 
+                Q(last_name__icontains=search_query) |
+                Q(username__icontains=search_query))
+        elif email_query:
+            queryset = queryset.filter(email__iexact=email_query)
+        
+        friend_ids = request.user.friends.values_list('id', flat=True)
+        queryset = queryset.exclude(id__in=friend_ids)
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

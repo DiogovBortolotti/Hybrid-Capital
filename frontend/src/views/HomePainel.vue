@@ -1,170 +1,198 @@
 <template>
   <div id="painelhome">
-    <div id="painelhome" class="min-h-screen flex flex-col">
+    <div class="min-h-screen flex flex-col">
       <Header />
-      <main class="p-4 md:p-6 bg-[#eed4ed]/10 container mx-auto">
+      <main class="flex-grow p-4 md:p-6 bg-[#eed4ed]/10 container mx-auto">
         <div class="flex items-center justify-between mb-8">
           <div>
             <h2 class="text-2xl font-bold text-[#282641]">Bem-vindo de volta, {{ user.full_name }}!</h2>
-            <p class="text-[#615c8e]">Resumo da sua situação financeira</p>
+            <p class="text-[#615c8e]">Resumo da sua situação financeira - {{ periodLabel }}</p>
           </div>
-          <button
-            class="bg-[#282641] text-white px-6 py-2 rounded-md hover:bg-[#615c8e] transition-colors duration-300 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:translate-y-[-2px]"
-            @click="$router.push('/lancamento')" >
-            <span class=" material-symbols-outlined">add</span> <span>Novo Lançamento</span>
+          <div class="flex gap-4">
+            <button
+              class="bg-[#282641] text-white px-6 py-2 rounded-md hover:bg-[#615c8e] transition-colors duration-300 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:translate-y-[-2px]"
+              @click="$router.push('/lancamento')"
+            >
+              <span class="material-symbols-outlined">add</span>
+              <span>Novo Lançamento</span>
+            </button>
+
+            <button
+              class="bg-[#282641] text-white px-6 py-2 rounded-md hover:bg-[#615c8e] transition-colors duration-300 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:translate-y-[-2px]"
+              @click="$router.push('/lancamentos')"
+            >
+              <span class="material-symbols-outlined">details</span>
+              <span>Lançamentos</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtro de Período -->
+        <div class="flex justify-end mb-6">
+          <select 
+            v-model="selectedPeriod" 
+            @change="fetchDashboardData"
+            :disabled="loading"
+            class="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a79de9]"
+          >
+            <option value="this_month">Mês Atual</option>
+            <option value="last_month">Mês Anterior</option>
+            <option value="last_3_months">Últimos 3 Meses</option>
+            <option value="last_6_months">Últimos 6 Meses</option>
+            <option value="this_year">Ano Atual</option>
+            <option value="last_year">Ano Anterior</option>
+          </select>
+        </div>
+
+        <!-- Loading state -->
+        <div v-if="loading" class="text-center py-8">
+          <span class="material-symbols-outlined animate-spin text-[#615c8e] text-4xl">refresh</span>
+          <p class="text-[#615c8e] mt-2">Carregando dados...</p>
+        </div>
+
+        <!-- Error state -->
+        <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          <p>Erro ao carregar dados: {{ error }}</p>
+          <button 
+            @click="fetchDashboardData" 
+            class="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Tentar Novamente
           </button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-          <div
-            class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px] border border-gray-100">
-            <div class="flex justify-between items-center mb-3">
-              <h3 class="font-semibold text-[#282641]">Saldo Total</h3>
-              <span class="material-symbols-outlined text-[#615c8e]">account_balance_wallet</span>
-            </div>
-            <p class="text-3xl font-bold text-[#282641]">R$ 99.9999,00</p>
-            <div class="flex items-center mt-2 text-green-500">
-              <span class="material-symbols-outlined text-sm">trending_up</span>
-              <span class="text-sm ml-1">12% este mês</span>
-            </div>
-          </div>
-          <div
-            class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px] border border-gray-100">
-            <div class="flex justify-between items-center mb-3">
-              <h3 class="font-semibold text-[#282641]">Receitas</h3>
-              <span class="material-symbols-outlined text-green-500">arrow_upward</span>
-            </div>
-            <p class="text-3xl font-bold text-green-500">R$ 99.9999,00</p>
-            <div class="flex items-center mt-2 text-[#615c8e]">
-              <span class="material-symbols-outlined text-sm">calendar_today</span>
-              <span class="text-sm ml-1">Último mês: R$ 99.9999,00</span>
-            </div>
-          </div>
-          <div
-            class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px] border border-gray-100">
-            <div class="flex justify-between items-center mb-3">
-              <h3 class="font-semibold text-[#282641]">Despesas</h3>
-              <span class="material-symbols-outlined text-red-500">arrow_downward</span>
-            </div>
-            <p class="text-3xl font-bold text-red-500">R$ 99.9999,00</p>
-            <div class="flex items-center mt-2 text-[#615c8e]">
-              <span class="material-symbols-outlined text-sm">calendar_today</span>
-              <span class="text-sm ml-1">Último mês: R$ 99.9999,00</span>
-            </div>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div
-            class="bg-white p-5 rounded-lg shadow-md lg:col-span-2 hover:shadow-lg transition-all duration-300 border border-gray-100">
-            <div class="flex justify-between items-center mb-5">
-              <h3 class="font-semibold text-[#282641]">Gastos por Categoria</h3>
-              <select
-                class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#a79de9]">
-                <option>Este mês</option>
-                <option>Mês passado</option>
-                <option>Últimos 3 meses</option>
-              </select>
-            </div>
-            <div class="h-[300px]">
-              <div data-chart="chart_0"></div>
-            </div>
-          </div>
-          <div
-            class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
-            <div class="flex justify-between items-center mb-5">
-              <h3 class="font-semibold text-[#282641]">Distribuição de Gastos</h3>
-              <span
-                class="material-symbols-outlined text-[#615c8e] cursor-pointer hover:text-[#282641] transition-colors hover:rotate-90 duration-300">more_vert</span>
-            </div>
-            <div class="h-[300px]">
-              <div data-chart="chart_1"></div>
-            </div>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <div
-            class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
-            <div class="flex justify-between items-center mb-5">
-              <h3 class="font-semibold text-[#282641]">Gastos x Receitas</h3>
-              <select
-                class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#a79de9]">
-                <option>Últimos 6 meses</option>
-                <option>Este ano</option>
-                <option>Ano passado</option>
-              </select>
-            </div>
-            <div class="h-[300px]">
-              <div data-chart="chart_2"></div>
-            </div>
-          </div>
-          <div class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div class="flex justify-between items-center mb-5">
-              <h3 class="font-semibold text-[#282641]">Pessoas</h3>
-              <button
-                class="text-[#615c8e] hover:text-[#282641] transition-colors duration-300 bg-[#eed4ed]/10 p-2 rounded-full hover:bg-[#eed4ed]/20">
-                <span class="material-symbols-outlined">person_add</span>
-              </button>
+
+        <!-- Dashboard data -->
+        <div v-if="!loading && !error && hasData">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+            <div
+              class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px] border border-gray-100">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="font-semibold text-[#282641]">Saldo Total</h3>
+                <span class="material-symbols-outlined text-[#615c8e]">account_balance_wallet</span>
+              </div>
+              <p class="text-3xl font-bold" :class="dashboardData.saldo_total >= 0 ? 'text-[#282641]' : 'text-red-500'">
+                R$ {{ formatCurrency(dashboardData.saldo_total) }}
+              </p>
+              <div class="flex items-center mt-2" :class="saldoVariation >= 0 ? 'text-green-500' : 'text-red-500'" v-if="saldoVariation !== 0">
+                <span class="material-symbols-outlined text-sm">
+                  {{ saldoVariation >= 0 ? 'trending_up' : 'trending_down' }}
+                </span>
+                <span class="text-sm ml-1">{{ formatPercentage(Math.abs(saldoVariation)) }}% este mês</span>
+              </div>
             </div>
             <div
-              class="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#a79de9] scrollbar-track-gray-100">
-              <div
-                class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-[#eed4ed]/10 transition-colors">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 rounded-full bg-[#615c8e] text-white flex items-center justify-center">
-                    <span>JD</span>
-                  </div>
-                  <div>
-                    <p class="font-medium text-[#282641]">João Damasceno</p>
-                    <p class="text-sm text-[#615c8e]">Cônjuge</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <p class="font-semibold text-[#282641]">R$ 3.200,00</p>
-                  <p class="text-sm text-green-500">+8%</p>
-                </div>
+              class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px] border border-gray-100">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="font-semibold text-[#282641]">Receitas</h3>
+                <span class="material-symbols-outlined text-green-500">arrow_upward</span>
+              </div>
+              <p class="text-3xl font-bold text-green-500">R$ {{ formatCurrency(dashboardData.entrada) }}</p>
+              <div class="flex items-center mt-2 text-[#615c8e]">
+                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                <span class="text-sm ml-1">Último mês: R$ {{ formatCurrency(lastMonthEntrada) }}</span>
+              </div>
+            </div>
+            <div
+              class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px] border border-gray-100">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="font-semibold text-[#282641]">Despesas</h3>
+                <span class="material-symbols-outlined text-red-500">arrow_downward</span>
+              </div>
+              <p class="text-3xl font-bold text-red-500">R$ {{ formatCurrency(dashboardData.saida) }}</p>
+              <div class="flex items-center mt-2 text-[#615c8e]">
+                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                <span class="text-sm ml-1">Último mês: R$ {{ formatCurrency(lastMonthSaida) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div
+              class="bg-white p-5 rounded-lg shadow-md lg:col-span-2 hover:shadow-lg transition-all duration-300 border border-gray-100">
+              <div class="flex justify-between items-center mb-5">
+                <h3 class="font-semibold text-[#282641]">Gastos por Categoria</h3>
+                <span class="text-sm text-[#615c8e]">{{ periodLabel }}</span>
+              </div>
+              <div class="h-[300px]">
+                <div id="category-chart" ref="categoryChart"></div>
+              </div>
+            </div>
+            <div
+              class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
+              <div class="flex justify-between items-center mb-5">
+                <h3 class="font-semibold text-[#282641]">Distribuição de Gastos (%)</h3>
+                <span
+                  class="material-symbols-outlined text-[#615c8e] cursor-pointer hover:text-[#282641] transition-colors hover:rotate-90 duration-300">more_vert</span>
+              </div>
+              <div class="h-[300px]">
+                <div id="donut-chart" ref="donutChart"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <div
+              class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
+              <div class="flex justify-between items-center mb-5">
+                <h3 class="font-semibold text-[#282641]">Evolução Financeira</h3>
+                <span class="text-sm text-[#615c8e]">{{ periodLabel }}</span>
+              </div>
+              <div class="h-[300px]">
+                <div id="line-chart" ref="lineChart"></div>
+              </div>
+            </div>
+            <div class="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div class="flex justify-between items-center mb-5">
+                <h3 class="font-semibold text-[#282641]">Pessoas</h3>
+                <button
+                  class="text-[#615c8e] hover:text-[#282641] transition-colors duration-300 bg-[#eed4ed]/10 p-2 rounded-full hover:bg-[#eed4ed]/20">
+                  <span class="material-symbols-outlined">person_add</span>
+                </button>
               </div>
               <div
-                class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-[#eed4ed]/10 transition-colors duration-200 cursor-pointer transform hover:scale-[1.02]">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 rounded-full bg-[#a79de9] text-white flex items-center justify-center">
-                    <span>MS</span>
+                class="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#a79de9] scrollbar-track-gray-100">
+                <div v-for="person in sharedPeople" :key="person.id"
+                  class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-[#eed4ed]/10 transition-colors duration-200 cursor-pointer transform hover:scale-[1.02]">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-[#615c8e] text-white flex items-center justify-center">
+                      <span>{{ getInitials(person.name) }}</span>
+                    </div>
+                    <div>
+                      <p class="font-medium text-[#282641]">{{ person.name }}</p>
+                      <p class="text-sm text-[#615c8e]">{{ person.relationship }}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p class="font-medium text-[#282641]">Maria Silva</p>
-                    <p class="text-sm text-[#615c8e]">Filha</p>
+                  <div class="text-right">
+                    <p class="font-semibold text-[#282641]">R$ {{ formatCurrency(person.amount) }}</p>
+                    <p :class="['text-sm', person.trend >= 0 ? 'text-green-500' : 'text-red-500']">
+                      {{ person.trend >= 0 ? '+' : '' }}{{ formatPercentage(person.trend) }}%
+                    </p>
                   </div>
                 </div>
-                <div class="text-right">
-                  <p class="font-semibold text-[#282641]">R$ 850,00</p>
-                  <p class="text-sm text-red-500">-3%</p>
-                </div>
+                <button
+                  class="w-full py-2 text-[#615c8e] border border-dashed border-[#615c8e] rounded-lg hover:bg-[#eed4ed]/20 transition-all duration-300 transform hover:translate-y-[-2px]">
+                  Adicionar nova pessoa
+                </button>
               </div>
-              <div
-                class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-[#eed4ed]/10 transition-colors duration-200 cursor-pointer transform hover:scale-[1.02]">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 rounded-full bg-[#eed4ed] text-[#282641] flex items-center justify-center">
-                    <span>PO</span>
-                  </div>
-                  <div>
-                    <p class="font-medium text-[#282641]">Pedro Oliveira</p>
-                    <p class="text-sm text-[#615c8e]">Filho</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <p class="font-semibold text-[#282641]">R$ 1.200,00</p>
-                  <p class="text-sm text-green-500">+5%</p>
-                </div>
-              </div>
-              <button
-                class="w-full py-2 text-[#615c8e] border border-dashed border-[#615c8e] rounded-lg hover:bg-[#eed4ed]/20 transition-all duration-300 transform hover:translate-y-[-2px]">
-                Adicionar nova pessoa
-              </button>
             </div>
           </div>
         </div>
+
+        <!-- Empty state -->
+        <div v-if="!loading && !error && !hasData" class="text-center py-12">
+          <span class="material-symbols-outlined text-[#615c8e] text-6xl">analytics</span>
+          <h3 class="text-xl font-semibold text-[#282641] mt-4">Nenhum dado disponível</h3>
+          <p class="text-[#615c8e] mt-2">Comece adicionando suas primeiras transações</p>
+          <button
+            @click="$router.push('/lancamento')"
+            class="mt-4 bg-[#615c8e] text-white px-6 py-2 rounded-md hover:bg-[#282641] transition-colors">
+            Adicionar Primeira Transação
+            </button>
+        </div>
       </main>
+      <Footer />
     </div>
   </div>
-  <Footer />
 </template>
 
 <script>
@@ -173,6 +201,7 @@ import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 
 export default {
+  name: 'HomePainel',
   components: {
     Header,
     Footer,
@@ -185,13 +214,74 @@ export default {
         email: '',
         full_name: '',
       },
+      loading: true,
+      error: null,
+      selectedPeriod: 'this_month',
+      dashboardData: {
+        entrada: 0,
+        saida: 0,
+        saldo_total: 0
+      },
+      categoriasGasto: [],
+      categoriasPercentual: [],
+      graficoMensal: [],
+      charts: {
+        category: null,
+        donut: null,
+        line: null
+      },
+      sharedPeople: [
+        { id: 1, name: 'João Damasceno', relationship: 'Cônjuge', amount: 3200, trend: 8 },
+        { id: 2, name: 'Maria Silva', relationship: 'Filha', amount: 850, trend: -3 },
+        { id: 3, name: 'Pedro Oliveira', relationship: 'Filho', amount: 1200, trend: 5 }
+      ],
+      lastMonthEntrada: 0,
+      lastMonthSaida: 0,
+      saldoVariation: 0
     };
+  },
+  computed: {
+    hasData() {
+      return this.categoriasGasto.length > 0 && this.graficoMensal.length > 0;
+    },
+    periodLabel() {
+      const labels = {
+        'this_month': 'Este Mês',
+        'last_month': 'Mês Anterior',
+        'last_3_months': 'Últimos 3 Meses',
+        'last_6_months': 'Últimos 6 Meses',
+        'this_year': 'Este Ano',
+        'last_year': 'Ano Anterior'
+      };
+      return labels[this.selectedPeriod] || 'Período';
+    }
   },
   async mounted() {
     await this.fetchUserData();
-    this.renderCharts();
+    await this.fetchDashboardData();
+  },
+  beforeUnmount() {
+    this.destroyCharts();
   },
   methods: {
+    formatCurrency(value) {
+      return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value);
+    },
+    
+    formatPercentage(value) {
+      return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value);
+    },
+    
+    getInitials(name) {
+      return name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
+    },
+
     async fetchUserData() {
       try {
         const token = localStorage.getItem('token');
@@ -219,6 +309,231 @@ export default {
         this.$router.push({ name: 'painel' });
       }
     },
+
+    async fetchDashboardData() {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${this.apiUrl}/api/dashboard/?period=${this.selectedPeriod}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          this.dashboardData = data.dashboard;
+          this.categoriasGasto = data.categorias_gasto || [];
+          this.categoriasPercentual = data.categorias_percentual || [];
+          this.graficoMensal = data.grafico_mensal || [];
+          
+          this.calculateVariations();
+          this.calculatePercentages();
+          
+          await this.$nextTick();
+          this.renderCharts();
+        } else {
+          throw new Error('Erro ao carregar dados do dashboard');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados do dashboard:', error);
+        this.error = error.message;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    calculatePercentages() {
+      const totalGasto = this.categoriasGasto.reduce((sum, cat) => sum + parseFloat(cat.gasto || 0), 0);
+      
+      this.categoriasPercentual = this.categoriasGasto.map(cat => {
+        const gasto = parseFloat(cat.gasto || 0);
+        const percentual = totalGasto > 0 ? (gasto / totalGasto) * 100 : 0;
+        return {
+          ...cat,
+          percentual: parseFloat(percentual.toFixed(2))
+        };
+      });
+    },
+
+    calculateVariations() {
+      if (this.graficoMensal.length >= 2) {
+        const currentMonth = this.graficoMensal[this.graficoMensal.length - 1];
+        const previousMonth = this.graficoMensal[this.graficoMensal.length - 2];
+        
+        this.lastMonthEntrada = previousMonth.entrada || 0;
+        this.lastMonthSaida = previousMonth.saida || 0;
+        
+        const currentSaldo = (currentMonth.entrada || 0) - (currentMonth.saida || 0);
+        const previousSaldo = (previousMonth.entrada || 0) - (previousMonth.saida || 0);
+        
+        if (previousSaldo !== 0) {
+          this.saldoVariation = ((currentSaldo - previousSaldo) / Math.abs(previousSaldo)) * 100;
+        } else {
+          this.saldoVariation = 0;
+        }
+      }
+    },
+
+    destroyCharts() {
+      Object.values(this.charts).forEach(chart => {
+        if (chart) {
+          try {
+            chart.destroy();
+          } catch (error) {
+            console.warn('Erro ao destruir gráfico:', error);
+          }
+        }
+      });
+      this.charts = { category: null, donut: null, line: null };
+    },
+
+    renderCharts() {
+      setTimeout(() => {
+        this.destroyCharts();
+        
+        // Gráfico de barras - Gastos por categoria
+        if (this.$refs.categoryChart && this.categoriasGasto.length > 0) {
+          try {
+            const categoryOptions = {
+              chart: {
+                type: "bar",
+                height: "280",
+                toolbar: { show: false }
+              },
+              colors: ["#615c8e"],
+              plotOptions: { 
+                bar: { 
+                  borderRadius: 4, 
+                  horizontal: true 
+                } 
+              },
+              dataLabels: { enabled: false },
+              xaxis: { 
+                categories: this.categoriasGasto.map(cat => cat.categoria),
+                labels: {
+                  formatter: (val) => {
+                    return 'R$ ' + val.toLocaleString('pt-BR', { 
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2 
+                    });
+                  }
+                }
+              },
+              grid: { borderColor: "#f5f5f5" },
+              tooltip: { 
+                theme: "light",
+                y: {
+                  formatter: (val) => {
+                    return 'R$ ' + val.toLocaleString('pt-BR', { 
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2 
+                    });
+                  }
+                }
+              },
+              series: [{ 
+                name: "Gastos", 
+                data: this.categoriasGasto.map(cat => parseFloat(cat.gasto) || 0)
+              }]
+            };
+
+            this.charts.category = new ApexCharts(this.$refs.categoryChart, categoryOptions);
+            this.charts.category.render();
+          } catch (error) {
+            console.error('Erro ao renderizar gráfico de categoria:', error);
+          }
+        }
+
+        // Gráfico de pizza - Distribuição de gastos em %
+        if (this.$refs.donutChart && this.categoriasPercentual.length > 0) {
+          try {
+            const donutOptions = {
+              chart: {
+                type: "donut",
+                height: "280",
+                toolbar: { show: false }
+              },
+              colors: ["#282641", "#3f3d63", "#615c8e", "#8580b0", "#a79de9", "#eed4ed"],
+              labels: this.categoriasPercentual.map(cat => cat.categoria),
+              legend: { 
+                position: "bottom"
+              },
+              dataLabels: {
+                enabled: true,
+                formatter: function(val) {
+                  return val.toFixed(1) + '%';
+                },
+                style: {
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  colors: ['white']
+                }
+              },
+              tooltip: { 
+                theme: "light"
+              },
+              series: this.categoriasPercentual.map(cat => cat.percentual)
+            };
+
+            this.charts.donut = new ApexCharts(this.$refs.donutChart, donutOptions);
+            this.charts.donut.render();
+          } catch (error) {
+            console.error('Erro ao renderizar gráfico de pizza:', error);
+          }
+        }
+
+        // Gráfico de linha - Gastos x Receitas
+        if (this.$refs.lineChart && this.graficoMensal.length > 0) {
+          try {
+            const lineOptions = {
+              chart: {
+                type: "line",
+                height: "280",
+                toolbar: { show: false }
+              },
+              colors: ["#615c8e", "#a79de9"],
+              stroke: { curve: "smooth", width: 3 },
+              xaxis: { 
+                categories: this.graficoMensal.map(item => item.mes_ano)
+              },
+              markers: { size: 4, hover: { size: 6 } },
+              grid: { borderColor: "#f5f5f5" },
+              tooltip: { 
+                theme: "light",
+                y: {
+                  formatter: (val) => {
+                    return 'R$ ' + val.toLocaleString('pt-BR', { 
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2 
+                    });
+                  }
+                }
+              },
+              series: [
+                { 
+                  name: "Receitas", 
+                  data: this.graficoMensal.map(item => parseFloat(item.entrada) || 0)
+                },
+                { 
+                  name: "Despesas", 
+                  data: this.graficoMensal.map(item => parseFloat(item.saida) || 0)
+                }
+              ]
+            };
+
+            this.charts.line = new ApexCharts(this.$refs.lineChart, lineOptions);
+            this.charts.line.render();
+          } catch (error) {
+            console.error('Erro ao renderizar gráfico de linha:', error);
+          }
+        }
+      }, 100);
+    },
+
     async logout() {
       try {
         const token = localStorage.getItem('token');
@@ -234,42 +549,6 @@ export default {
       } catch (err) {
         console.error('Erro ao fazer logout:', err);
       }
-    },
-    renderCharts() {
-      new ApexCharts(document.querySelector('[data-chart="chart_0"]'), {
-        chart: { type: "bar", width: "100%", height: "280", toolbar: { show: false } },
-        colors: ["#615c8e"],
-        plotOptions: { bar: { borderRadius: 4, horizontal: true } },
-        dataLabels: { enabled: false },
-        xaxis: { categories: ["Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Outros"] },
-        grid: { borderColor: "#f5f5f5" },
-        tooltip: { theme: "light" },
-        series: [{ name: "Gastos", data: [2100, 950, 750, 550, 350, 250] }]
-      }).render();
-
-      new ApexCharts(document.querySelector('[data-chart="chart_1"]'), {
-        chart: { type: "donut", width: "100%", height: "280", toolbar: { show: false } },
-        colors: ["#282641", "#3f3d63", "#615c8e", "#8580b0", "#a79de9", "#eed4ed"],
-        labels: ["Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Outros"],
-        legend: { position: "bottom" },
-        dataLabels: { enabled: false },
-        tooltip: { theme: "light" },
-        series: [2100, 950, 750, 550, 350, 250]
-      }).render();
-
-      new ApexCharts(document.querySelector('[data-chart="chart_2"]'), {
-        chart: { type: "line", width: "100%", height: "280", toolbar: { show: false } },
-        colors: ["#615c8e", "#a79de9"],
-        stroke: { curve: "smooth", width: 3 },
-        xaxis: { categories: ["Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro"] },
-        markers: { size: 4, hover: { size: 6 } },
-        grid: { borderColor: "#f5f5f5" },
-        tooltip: { theme: "light" },
-        series: [
-          { name: "Receitas", data: [7500, 7800, 8000, 7600, 8200, 8300] },
-          { name: "Despesas", data: [4200, 4300, 3950, 4100, 3850, 4000] }
-        ]
-      }).render();
     }
   }
 };
@@ -676,150 +955,6 @@ video {
   }
 }
 
-#painelhome .absolute {
-  position: absolute;
-}
-
-#painelhome .relative {
-  position: relative;
-}
-
-#painelhome .sticky {
-  position: sticky;
-}
-
-#painelhome .right-0 {
-  right: 0;
-}
-
-#painelhome .top-0 {
-  top: 0;
-}
-
-#painelhome .z-10 {
-  z-index: 10;
-}
-
-#painelhome .z-50 {
-  z-index: 50;
-}
-
-#painelhome .mx-auto {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-#painelhome .mb-3 {
-  margin-bottom: 12px;
-}
-
-#painelhome .mb-5 {
-  margin-bottom: 20px;
-}
-
-#painelhome .mb-8 {
-  margin-bottom: 32px;
-}
-
-#painelhome .ml-1 {
-  margin-left: 4px;
-}
-
-#painelhome .mt-2 {
-  margin-top: 8px;
-}
-
-#painelhome .block {
-  display: block;
-}
-
-#painelhome .flex {
-  display: flex;
-}
-
-#painelhome .grid {
-  display: grid;
-}
-
-#painelhome .h-10 {
-  height: 40px;
-}
-
-#painelhome .h-8 {
-  height: 32px;
-}
-
-#painelhome .h-\[300px\] {
-  height: 300px;
-}
-
-#painelhome .max-h-\[300px\] {
-  max-height: 300px;
-}
-
-#painelhome .min-h-screen {
-  min-height: 100vh;
-}
-
-#painelhome .w-10 {
-  width: 40px;
-}
-
-#painelhome .w-48 {
-  width: 192px;
-}
-
-#painelhome .w-8 {
-  width: 32px;
-}
-
-#painelhome .w-full {
-  width: 100%;
-}
-
-#painelhome .max-w-\[1440px\] {
-  max-width: 1440px;
-}
-
-#painelhome .transform {
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
-#painelhome .cursor-pointer {
-  cursor: pointer;
-}
-
-#painelhome .list-none {
-  list-style-type: none;
-}
-
-#painelhome .grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-
-#painelhome .flex-row {
-  flex-direction: row;
-}
-
-#painelhome .items-center {
-  align-items: center;
-}
-
-#painelhome .justify-center {
-  justify-content: center;
-}
-
-#painelhome .justify-between {
-  justify-content: space-between;
-}
-
-#painelhome .gap-4 {
-  gap: 16px;
-}
-
-#painelhome .gap-6 {
-  gap: 24px;
-}
 
 #painelhome :is(.space-x-1 > :not([hidden]) ~ :not([hidden])) {
   --tw-space-x-reverse: 0;

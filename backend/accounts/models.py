@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils.translation import gettext_lazy as _
-from django.utils import timezone
+from django.db import models
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -38,61 +39,23 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-from django.db import models
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-class Invitation(models.Model):
-    PENDING = 'pending'
-    ACCEPTED = 'accepted'
-    REJECTED = 'rejected'
-    
-    STATUS_CHOICES = [
-        (PENDING, 'Pending'),
-        (ACCEPTED, 'Accepted'),
-        (REJECTED, 'Rejected'),
-    ]
-    
-    sender = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='sent_invitations'
+class FriendRequest(models.Model):
+    from_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='sent_requests',
+        on_delete=models.CASCADE
     )
-    recipient = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='received_invitations'
+    to_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='received_requests',
+        on_delete=models.CASCADE
     )
-    status = models.CharField(
-        max_length=10,
-        choices=STATUS_CHOICES,
-        default=PENDING
-    )
+    is_accepted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['sender', 'recipient']
-        ordering = ['-created_at']
-        
-    def __str__(self):
-        recipient_info = self.recipient.email if self.recipient else self.recipient_email
-        return f"{self.sender.email} -> {recipient_info} ({self.status})"
+        unique_together = ('from_user', 'to_user')
 
-    def accept(self, user):
-        """Método para aceitar o convite"""
-        if self.status != self.PENDING:
-            raise ValueError("Only pending invitations can be accepted")
-        
-        self.status = self.ACCEPTED
-        self.recipient = user
-        self.accepted_at = timezone.now()
-        self.save()
-
-    def reject(self):
-        """Método para rejeitar o convite"""
-        if self.status != self.PENDING:
-            raise ValueError("Only pending invitations can be rejected")
-        
-        self.status = self.REJECTED
+    def accept(self):
+        self.is_accepted = True
         self.save()

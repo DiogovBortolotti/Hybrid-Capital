@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import CustomUser, Invitation
+from .models import CustomUser, FriendRequest
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 
@@ -44,39 +44,10 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'full_name']
         read_only_fields = ['id', 'email', 'full_name']
 
+class FriendRequestSerializer(serializers.ModelSerializer):
+    from_user = UserSerializer(read_only=True)
+    to_user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
 
-class InvitationSerializer(serializers.ModelSerializer):
-    sender = UserSerializer(read_only=True)
-    recipient = UserSerializer(read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
     class Meta:
-        model = Invitation
-        fields = ['id', 'sender', 'recipient', 'status', 'status_display', 'created_at']
-        read_only_fields = ['id', 'created_at']
-
-class SendInvitationSerializer(serializers.Serializer):
-    recipient_email = serializers.EmailField(write_only=True)
-    
-    def validate_recipient_email(self, value):
-        try:
-            recipient = CustomUser.objects.get(email=value)
-            if Invitation.objects.filter(sender=self.context['request'].user, recipient=recipient).exists():
-                raise serializers.ValidationError("Você já enviou um convite para este usuário.")
-            return recipient
-        except CustomUser.DoesNotExist:
-            raise serializers.ValidationError("Usuário não encontrado.")
-
-class HandleInvitationSerializer(serializers.Serializer):
-    invitation_id = serializers.IntegerField()
-    
-    def validate_invitation_id(self, value):
-        try:
-            invitation = Invitation.objects.get(
-                id=value,
-                recipient=self.context['request'].user,
-                status='pending'
-            )
-            return invitation
-        except Invitation.DoesNotExist:
-            raise serializers.ValidationError("Convite inválido ou já processado.")
+        model = FriendRequest
+        fields = ['id', 'from_user', 'to_user', 'is_accepted', 'created_at']
