@@ -76,10 +76,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework.authtoken',
     'financas',
+    "investimentos",
     'corsheaders',
     'rest_framework',
     'accounts',
     'django_filters',
+    
 ]
 
 REST_FRAMEWORK = {

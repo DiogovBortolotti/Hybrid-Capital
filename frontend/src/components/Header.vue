@@ -136,13 +136,15 @@
           </summary>
           <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg text-[#120907] z-50">
             <div class="py-1">
-              <a href="#" class="block px-4 py-2 hover:bg-[#eed4ed] flex items-center space-x-2">
+              <a href="#" @click.prevent="$router.push('/Investimentos')"
+                class="block px-4 py-2 hover:bg-[#eed4ed] flex items-center space-x-2">
                 <span class="material-symbols-outlined text-sm">home</span>
-                <span>Início</span>
+                <span>Dash</span>
               </a>
-              <a href="#" class="block px-4 py-2 hover:bg-[#eed4ed] flex items-center space-x-2">
+                <a href="#" @click.prevent="$router.push('/Investimentos')"
+                class="block px-4 py-2 hover:bg-[#eed4ed] flex items-center space-x-2">
                 <span class="material-symbols-outlined text-sm">receipt</span>
-                <span>Transações</span>
+                <span>Lancamentos</span>
               </a>
               <a href="#" class="block px-4 py-2 hover:bg-[#eed4ed] flex items-center space-x-2">
                 <span class="material-symbols-outlined text-sm">analytics</span>

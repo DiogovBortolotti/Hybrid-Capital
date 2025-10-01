@@ -9,10 +9,13 @@
   "dependencies": {
     "apexcharts": "^4.5.0",
     "axios": "^1.8.4",
+    "chart.js": "^4.5.0",
     "core-js": "^3.8.3",
+    "echarts": "^6.0.0",
     "html5-qrcode": "^2.3.8",
     "sweetalert2": "^11.19.1",
     "vue": "^3.2.13",
+    "vue-chartjs": "^5.3.2",
     "vue-router": "^4.0.3"
   },
   "devDependencies": {

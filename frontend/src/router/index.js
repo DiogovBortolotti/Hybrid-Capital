@@ -7,6 +7,9 @@ import HomePainel from '../views/HomePainel.vue'
 import Lancamento from '../views/Lancamento.vue'
 import FriendList from '../views/FriendList.vue'
 import Pagamentos from '../views/Pagamentos.vue'
+import Investimentos from '../views/Investimentos/Lancamento_Investimento'
+import Dashboard_Investimento from '../views/Investimentos/Dashboard_Investimento'
+
 const routes = [
     {
     path: '/',
@@ -47,7 +50,19 @@ const routes = [
     path: '/Pagamentos',
     name: 'Pagamentos',
     component: Pagamentos
-  }
+  },
+    {
+    path: '/Investimentos',
+    name: 'Investimentos',
+    component: Investimentos
+  },
+    {
+    path: '/Dashboard_Investimento',
+    name: 'Dashboard_Investimento',
+    component: Dashboard_Investimento
+  },
+
+  
 ]
 
 const router = createRouter({

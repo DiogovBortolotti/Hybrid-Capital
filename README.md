@@ -280,3 +280,6 @@ make frontend
 
 Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
 
+
+docker-compose up -d --build
+docker-compose logs -f
