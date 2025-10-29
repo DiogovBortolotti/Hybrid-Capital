@@ -13,6 +13,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - hybrid_net
 
   backend:
     build: ./backend
@@ -20,12 +22,14 @@ services:
     restart: always
     depends_on:
       - db
-    environment:
-      DATABASE_URL: postgres://hybrid_user:hybrid_pass@db:5432/hybrid
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/app
     ports:
       - "8000:8000"
+    networks:
+      - hybrid_net
 
   frontend:
     build: ./frontend
@@ -33,10 +37,16 @@ services:
     restart: always
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
+    env_file:
+      - ./frontend/.env
     ports:
       - "8080:8080"
+    networks:
+      - hybrid_net
 
 volumes:
   postgres_data:
+
+networks:
+  hybrid_net:
+    driver: bridge

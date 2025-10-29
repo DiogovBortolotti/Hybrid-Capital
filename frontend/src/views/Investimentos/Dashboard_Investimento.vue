@@ -1,29 +1,7 @@
 <template>
   <div id="webcrumbs">
+    <Header />
     <div class="min-h-screen flex flex-col bg-[#eed4ed]/10">
-      <header class="bg-[#282641] text-white p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-          <div class="flex items-center space-x-2">
-            <span class="material-symbols-outlined text-2xl">account_balance</span>
-            <h1 class="text-xl font-bold">FinanceTracker</h1>
-          </div>
-          <nav class="hidden md:flex space-x-6">
-            <a class="hover:text-[#a79de9] transition-colors duration-300" href="#">Dashboard</a>
-            <a class="hover:text-[#a79de9] transition-colors duration-300" href="#">Transações</a>
-            <a class="hover:text-[#a79de9] transition-colors duration-300" href="#">Investimentos</a>
-            <a class="hover:text-[#a79de9] transition-colors duration-300" href="#">Relatórios</a>
-          </nav>
-          <div class="flex items-center space-x-2">
-            <button class="p-2 rounded-full hover:bg-[#615c8e] transition-colors duration-300">
-              <span class="material-symbols-outlined">notifications</span>
-            </button>
-            <div class="w-8 h-8 bg-[#a79de9] rounded-full flex items-center justify-center">
-              <span class="text-sm font-bold">JS</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main class="flex-grow p-4 md:p-6 container mx-auto">
         <!-- Cabeçalho com boas-vindas e botões -->
         <div class="flex items-center justify-between mb-8">
@@ -411,9 +389,13 @@
 <script>
 import { onMounted } from 'vue'
 import ApexCharts from 'apexcharts'
+import Header from '@/components/Header.vue'
 
 export default {
   name: 'FinanceDashboard',
+  components: {
+    Header
+  },
   setup() {
     onMounted(() => {
       // Gráfico de linha - Desempenho dos Investimentos
@@ -471,6 +453,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
             @import url(https://fonts.googleapis.com/css2?family=Lato&display=swap);

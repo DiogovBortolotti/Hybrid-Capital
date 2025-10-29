@@ -136,7 +136,7 @@
           </summary>
           <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg text-[#120907] z-50">
             <div class="py-1">
-              <a href="#" @click.prevent="$router.push('/Investimentos')"
+              <a href="#" @click.prevent="$router.push('/Dashboard_Investimento')"
                 class="block px-4 py-2 hover:bg-[#eed4ed] flex items-center space-x-2">
                 <span class="material-symbols-outlined text-sm">home</span>
                 <span>Dash</span>

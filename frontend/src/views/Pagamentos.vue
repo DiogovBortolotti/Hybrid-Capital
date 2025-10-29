@@ -383,15 +383,25 @@ export default {
       receivablesCategoryFilters: [],
       statusOptions: ['Pago', 'Pendente', 'Atrasado'],
       categoryOptions: ['Alimentação', 'Transporte', 'Lazer', 'Compras', 'Saúde'],
-      monthlyChart: null
+      monthlyChart: null,
+      isFetching: false,
+      fetchDebounce: null
     };
   },
   mounted() {
     this.fetchSharedTransactions();
     this.fetchMonthlyData();
   },
-  methods: {
+ methods: {
     async fetchSharedTransactions() {
+      if (this.isFetching) {
+        console.log('🛑 Bloqueada requisição duplicada');
+        return;
+      }
+      
+      this.isFetching = true;
+      console.log('🚀 Iniciando fetchSharedTransactions');
+      
       try {
         const token = localStorage.getItem('token');
         
@@ -415,53 +425,36 @@ export default {
           axios.get('http://localhost:8000/api/meus-recebimentos/', receivablesConfig),
         ]);
 
+        console.log('📥 Dívidas recebidas:', resDebts.data);
+        console.log('📥 Recebíveis recebidos:', resReceivables.data);
+
         this.sharedDebts = resDebts.data || [];
         this.sharedReceivables = resReceivables.data || [];
       } catch (error) {
         console.error('Erro ao carregar transações compartilhadas:', error);
-        // Dados mockados para demonstração
-        this.sharedDebts = [
-          { 
-            id: 1, 
-            descricao: 'Aluguel', 
-            data: '2023-06-05', 
-            valor: '1500.00', 
-            status_pagamento: 'Pendente', 
-            categoria: 'Moradia' 
-          },
-          { 
-            id: 2, 
-            descricao: 'Supermercado', 
-            data: '2023-06-10', 
-            valor: '350.75', 
-            status_pagamento: 'Pago', 
-            categoria: 'Alimentação' 
-          }
-        ];
-        this.sharedReceivables = [
-          { 
-            id: 1, 
-            amount: '75.50', 
-            status: 'Pago', 
-            due_date: '2023-06-12',
-            received_by: { full_name: 'Maria Silva' },
-            transaction_share: { 
-              transaction: { 
-                descricao: 'Jantar compartilhado',
-                categoria: 'Alimentação'
-              } 
-            }
-          }
-        ];
+        this.sharedDebts = [];
+        this.sharedReceivables = [];
+      } finally {
+        this.isFetching = false;
+        console.log('✅ fetchSharedTransactions finalizado');
       }
     },
+
+    debouncedFetchSharedTransactions() {
+      if (this.fetchDebounce) {
+        clearTimeout(this.fetchDebounce);
+      }
+      this.fetchDebounce = setTimeout(() => {
+        this.fetchSharedTransactions();
+      }, 300);
+    },
+
     async fetchMonthlyData() {
       try {
         const token = localStorage.getItem('token');
         const config = { headers: {} };
         if (token) config.headers['Authorization'] = `Token ${token}`;
 
-        // Adicionar filtros de data se existirem
         if (this.chartFilters.startMonth) {
           config.params = {
             start_month: this.chartFilters.startMonth,
@@ -469,27 +462,25 @@ export default {
           };
         }
         
-        console.log('teste - Fazendo requisição');
-        console.log('Config:', config);
-
         const response = await axios.get('http://localhost:8000/api/evolucao-mensal/', config);
-        console.log('teste - Resposta recebida', response);
-
-        // Acesse chart_data dentro de data
         this.monthlyData = response.data.chart_data || [];
-        console.log('Dados processados:', this.monthlyData);
         this.renderChart();
             
       } catch (error) {
         console.error('Erro ao carregar dados mensais:', error);
-        this.monthlyData = [
-        ];
+        this.monthlyData = [];
         this.renderChart();
+        
+        // Opcional: mostrar mensagem de erro
+        this.$notify({
+          type: 'error',
+          title: 'Erro',
+          text: 'Não foi possível carregar os dados do gráfico.'
+        });
       }
     },
 
     renderChart() {
-      // Destruir gráfico anterior se existir
       if (this.monthlyChart) {
         this.monthlyChart.destroy();
       }
@@ -497,34 +488,26 @@ export default {
       const ctx = document.getElementById('monthlyChart');
       if (!ctx) return;
 
-      // Verificar se há dados
       if (!this.monthlyData || this.monthlyData.length === 0) {
         console.log('Nenhum dado disponível para renderizar o gráfico');
+        
+        // Mostrar mensagem de "sem dados" no canvas
+        ctx.getContext('2d').font = '16px Arial';
+        ctx.getContext('2d').fillText('Nenhum dado disponível', 100, 100);
         return;
       }
 
-      console.log('Dados para renderização:', this.monthlyData);
-
-      // Formatar meses para exibição - CORRIGIDO
       const formattedMonths = this.monthlyData.map(item => {
-        // Verificar o formato do mês que está vindo da API
-        console.log('Item month:', item.month);
-        
         if (item.month.includes('/')) {
-          // Formato da API: "Apr/2025", "Aug/2025"
           const [monthStr, year] = item.month.split('/');
-          
-          // Mapear abreviações em inglês para português
           const monthMap = {
             'Jan': 'Jan', 'Feb': 'Fev', 'Mar': 'Mar', 'Apr': 'Abr',
             'May': 'Mai', 'Jun': 'Jun', 'Jul': 'Jul', 'Aug': 'Ago',
             'Sep': 'Set', 'Oct': 'Out', 'Nov': 'Nov', 'Dec': 'Dez'
           };
-          
           const monthPt = monthMap[monthStr] || monthStr;
           return `${monthPt}/${year.slice(2)}`;
         } else {
-          // Formato antigo: "YYYY-MM" (fallback)
           const [year, month] = item.month.split('-');
           const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
                              'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -586,7 +569,6 @@ export default {
     buildDebtsFilterParams() {
       const params = {};
       
-      // Filtros de data
       if (this.debtsDateFilters.startDate) {
         params.start_date = this.debtsDateFilters.startDate;
       }
@@ -594,12 +576,10 @@ export default {
         params.end_date = this.debtsDateFilters.endDate;
       }
       
-      // Filtros de status
       if (this.debtsStatusFilters.length > 0) {
         params.status_pagamento = this.debtsStatusFilters.join(',');
       }
       
-      // Filtros de categoria
       if (this.debtsCategoryFilters.length > 0) {
         params.categoria = this.debtsCategoryFilters.join(',');
       }
@@ -610,7 +590,6 @@ export default {
     buildReceivablesFilterParams() {
       const params = {};
       
-      // Filtros de data
       if (this.receivablesDateFilters.startDate) {
         params.start_date = this.receivablesDateFilters.startDate;
       }
@@ -618,12 +597,10 @@ export default {
         params.end_date = this.receivablesDateFilters.endDate;
       }
       
-      // Filtros de status
       if (this.receivablesStatusFilters.length > 0) {
         params.status = this.receivablesStatusFilters.join(',');
       }
       
-      // Filtros de categoria
       if (this.receivablesCategoryFilters.length > 0) {
         params.categoria = this.receivablesCategoryFilters.join(',');
       }
@@ -632,23 +609,23 @@ export default {
     },
 
     applyDebtsDateFilter() {
-      this.fetchSharedTransactions();
+      this.debouncedFetchSharedTransactions();
     },
 
     clearDebtsDateFilter() {
       this.debtsDateFilters.startDate = null;
       this.debtsDateFilters.endDate = null;
-      this.fetchSharedTransactions();
+      this.debouncedFetchSharedTransactions();
     },
 
     applyReceivablesDateFilter() {
-      this.fetchSharedTransactions();
+      this.debouncedFetchSharedTransactions();
     },
 
     clearReceivablesDateFilter() {
       this.receivablesDateFilters.startDate = null;
       this.receivablesDateFilters.endDate = null;
-      this.fetchSharedTransactions();
+      this.debouncedFetchSharedTransactions();
     },
 
     applyChartFilter() {
@@ -668,9 +645,23 @@ export default {
         if (token) config.headers['Authorization'] = `Token ${token}`;
 
         await axios.post(`http://localhost:8000/api/pagar-divida/${debtId}/`, {}, config);
+        
+        // Mostrar mensagem de sucesso
+        this.$notify({
+          type: 'success',
+          title: 'Sucesso',
+          text: 'Pagamento realizado com sucesso!'
+        });
+        
         this.fetchSharedTransactions();
       } catch (error) {
         console.error('Erro ao pagar dívida:', error);
+        
+        this.$notify({
+          type: 'error',
+          title: 'Erro',
+          text: 'Não foi possível realizar o pagamento.'
+        });
       }
     },
 
@@ -682,57 +673,22 @@ export default {
   },
   computed: {
     filteredDebts() {
-      // Aplicar filtros locais (caso o backend não tenha filtrado)
-      let filtered = this.sharedDebts;
-      
-      // Filtro de status
-      if (this.debtsStatusFilters.length > 0) {
-        filtered = filtered.filter(debt => 
-          this.debtsStatusFilters.includes(debt.status_pagamento)
-        );
-      }
-      
-      // Filtro de categoria
-      if (this.debtsCategoryFilters.length > 0) {
-        filtered = filtered.filter(debt => 
-          this.debtsCategoryFilters.includes(debt.categoria)
-        );
-      }
-      
-      return filtered;
+      return this.sharedDebts;
     },
     
     filteredReceivables() {
-      // Aplicar filtros locais (caso o backend não tenha filtrado)
-      let filtered = this.sharedReceivables;
-      
-      // Filtro de status
-      if (this.receivablesStatusFilters.length > 0) {
-        filtered = filtered.filter(receivable => 
-          this.receivablesStatusFilters.includes(receivable.status)
-        );
-      }
-      
-      // Filtro de categoria (se disponível nos receivables)
-      if (this.receivablesCategoryFilters.length > 0 && filtered.length > 0) {
-        filtered = filtered.filter(receivable => 
-          receivable.transaction_share?.transaction?.categoria &&
-          this.receivablesCategoryFilters.includes(receivable.transaction_share.transaction.categoria)
-        );
-      }
-      
-      return filtered;
+      return this.sharedReceivables;
     },
     
     totalPaid() {
       return this.filteredDebts
         .filter(d => d.status_pagamento === 'Pago')
-        .reduce((sum, d) => sum + parseFloat(d.valor), 0);
+        .reduce((sum, d) => sum + parseFloat(d.valor || 0), 0);
     },
     totalPending() {
       return this.filteredDebts
         .filter(d => d.status_pagamento !== 'Pago')
-        .reduce((sum, d) => sum + parseFloat(d.valor), 0);
+        .reduce((sum, d) => sum + parseFloat(d.valor || 0), 0);
     },
     totalPaidReceivables() {
       return this.filteredReceivables.filter(r => r.status === 'Pago').length;
@@ -740,38 +696,36 @@ export default {
     totalReceived() {
       return this.filteredReceivables
         .filter(r => r.status === 'Pago')
-        .reduce((sum, r) => sum + parseFloat(r.amount), 0);
+        .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
     },
     totalRemaining() {
       return this.filteredReceivables
         .filter(r => r.status !== 'Pago')
-        .reduce((sum, r) => sum + parseFloat(r.amount), 0);
+        .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
     }
   },
   watch: {
-    // Observa mudanças nos filtros de dívidas
     debtsStatusFilters: {
       handler() {
-        this.fetchSharedTransactions();
+        this.debouncedFetchSharedTransactions();
       },
       deep: true
     },
     debtsCategoryFilters: {
       handler() {
-        this.fetchSharedTransactions();
+        this.debouncedFetchSharedTransactions();
       },
       deep: true
     },
-    // Observa mudanças nos filtros de recebíveis
     receivablesStatusFilters: {
       handler() {
-        this.fetchSharedTransactions();
+        this.debouncedFetchSharedTransactions();
       },
       deep: true
     },
     receivablesCategoryFilters: {
       handler() {
-        this.fetchSharedTransactions();
+        this.debouncedFetchSharedTransactions();
       },
       deep: true
     }

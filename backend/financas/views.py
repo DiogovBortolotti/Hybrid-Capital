@@ -171,19 +171,25 @@ from django.db.models import Q, Sum
 from .models import Transaction, SharedPayment
 from .serializers import TransactionSerializer, SharedPaymentReadSerializer
 
+# views.py
 class MyDebtsListView(generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = TransactionSerializer
 
     def get_queryset(self):
+        print(f"🔍 MyDebtsListView - Filtros recebidos: {self.request.query_params}")
+        
+        # 🔥 CORREÇÃO: Filtrar apenas transações de SAÍDA (débitos)
         queryset = Transaction.objects.filter(
-            user=self.request.user
+            user=self.request.user,
+            tipo='Saída'  # Apenas saídas são consideradas dívidas
         ).order_by('-data', '-created_at')
         
-        # Aplicar filtros
         queryset = self.apply_filters(queryset)
+        print(f"📊 MyDebtsListView - Resultados (apenas saídas): {queryset.count()} itens")
         return queryset
+    
     
     def apply_filters(self, queryset):
         # Filtro por data
@@ -225,6 +231,7 @@ class MyReceivablesListView(generics.ListAPIView):
     serializer_class = SharedPaymentReadSerializer
     
     def get_queryset(self):
+        print(f"🔍 MyReceivablesListView - Filtros recebidos: {self.request.query_params}")
         queryset = SharedPayment.objects.select_related(
             'transaction_share__transaction', 
             'transaction_share__shared_with', 
@@ -234,8 +241,8 @@ class MyReceivablesListView(generics.ListAPIView):
             transaction_share__transaction__user=self.request.user
         ).order_by('due_date')
         
-        # Aplicar filtros
         queryset = self.apply_filters(queryset)
+        print(f"📊 MyReceivablesListView - Resultados: {queryset.count()} itens")
         return queryset
     
     def apply_filters(self, queryset):
@@ -378,154 +385,189 @@ from datetime import timedelta
 import calendar
 from .models import Transaction
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.db.models import Sum, Case, When, Value, DecimalField, Q
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
+from datetime import timedelta
+import calendar
+import logging
+from .models import Transaction
+
+# Configurar logger
+logger = logging.getLogger(__name__)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_financeiro(request):
     user = request.user
-    period = request.GET.get('period', 'this_month')  # Parâmetro de período
+    period = request.GET.get('period', 'this_month')
     
-    # Query base filtrada por usuário
-    transactions = Transaction.objects.filter(user=user)
-    
-    # Aplicar filtro de período
-    today = timezone.now().date()
-    
-    if period == 'this_month':
-        first_day = today.replace(day=1)
-        last_day = today.replace(day=calendar.monthrange(today.year, today.month)[1])
-        transactions = transactions.filter(created_at__date__range=[first_day, last_day])
-    
-    elif period == 'last_month':
-        first_day_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
-        last_day_last_month = first_day_last_month.replace(
-            day=calendar.monthrange(first_day_last_month.year, first_day_last_month.month)[1]
-        )
-        transactions = transactions.filter(created_at__date__range=[first_day_last_month, last_day_last_month])
-    
-    elif period == 'last_3_months':
-        three_months_ago = today - timedelta(days=90)
-        transactions = transactions.filter(created_at__date__gte=three_months_ago)
-    
-    elif period == 'last_6_months':
-        six_months_ago = today - timedelta(days=180)
-        transactions = transactions.filter(created_at__date__gte=six_months_ago)
-    
-    elif period == 'last_year':
-        first_day_last_year = today.replace(year=today.year-1, month=1, day=1)
-        last_day_last_year = today.replace(year=today.year-1, month=12, day=31)
-        transactions = transactions.filter(created_at__date__range=[first_day_last_year, last_day_last_year])
-    
-    elif period == 'this_year':
-        first_day_this_year = today.replace(month=1, day=1)
-        transactions = transactions.filter(created_at__date__gte=first_day_this_year)
-    
-    # Resto do código permanece igual...
-    dashboard_agg = transactions.aggregate(
-        entrada=Sum(
-            Case(
-                When(forma='Débito', tipo='Entrada', then='valor'),
-                default=Value(0),
-                output_field=DecimalField(max_digits=15, decimal_places=2)
+    try:
+        # Query base filtrada por usuário
+        transactions = Transaction.objects.filter(user=user)
+        
+        # Aplicar filtro de período - CORREÇÃO: usar campo 'data' em vez de 'created_at'
+        today = timezone.now().date()
+        
+        if period == 'this_month':
+            first_day = today.replace(day=1)
+            last_day = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+            transactions = transactions.filter(data__range=[first_day, last_day])
+        
+        elif period == 'last_month':
+            first_day_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+            last_day_last_month = first_day_last_month.replace(
+                day=calendar.monthrange(first_day_last_month.year, first_day_last_month.month)[1]
             )
-        ),
-        saida_credito=Sum(
-            Case(
-                When(forma='Crédito', status_pagamento='Pendente', then='valor'),
-                default=Value(0),
-                output_field=DecimalField(max_digits=15, decimal_places=2)
-            )
-        ),
-        saida_debito=Sum(
-            Case(
-                When(forma='Débito', tipo='Saída', then='valor'),
-                default=Value(0),
-                output_field=DecimalField(max_digits=15, decimal_places=2)
-            )
-        )
-    )
-    
-    entrada = dashboard_agg['entrada'] or 0
-    saida_credito = dashboard_agg['saida_credito'] or 0
-    saida_debito = dashboard_agg['saida_debito'] or 0
-    saida_total = saida_credito + saida_debito
-    saldo_total = entrada - saida_total
-    
-    dashboard_data = {
-        'entrada': float(entrada),
-        'saida': float(saida_total),
-        'saldo_total': float(saldo_total)
-    }
-    
-    # 2. Dados por categoria (gastos)
-    categorias_data = transactions.filter(
-        tipo='Saída'
-    ).values('categoria').annotate(
-        gasto=Sum(
-            Case(
-                When(Q(forma='Crédito', status_pagamento='Pendente') | Q(forma='Débito'), then='valor'),
-                default=Value(0),
-                output_field=DecimalField(max_digits=15, decimal_places=2)
+            transactions = transactions.filter(data__range=[first_day_last_month, last_day_last_month])
+        
+        elif period == 'last_3_months':
+            three_months_ago = today - timedelta(days=90)
+            transactions = transactions.filter(data__gte=three_months_ago)
+        
+        elif period == 'last_6_months':
+            six_months_ago = today - timedelta(days=180)
+            transactions = transactions.filter(data__gte=six_months_ago)
+        
+        elif period == 'last_year':
+            first_day_last_year = today.replace(year=today.year-1, month=1, day=1)
+            last_day_last_year = today.replace(year=today.year-1, month=12, day=31)
+            transactions = transactions.filter(data__range=[first_day_last_year, last_day_last_year])
+        
+        elif period == 'this_year':
+            first_day_this_year = today.replace(month=1, day=1)
+            transactions = transactions.filter(data__gte=first_day_this_year)
+        
+        # Resto do código permanece igual...
+        dashboard_agg = transactions.aggregate(
+            entrada=Sum(
+                Case(
+                    When(tipo='Entrada', then='valor'),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            ),
+            saida_credito=Sum(
+                Case(
+                    When(status_pagamento='Pendente', then='valor'),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            ),
+            saida_debito=Sum(
+                Case(
+                    When(tipo='Saída', then='valor'),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
             )
         )
-    ).order_by('-gasto')
-    
-    # Converter para lista de dicionários
-    categorias_gasto = []
-    for cat in categorias_data:
-        categorias_gasto.append({
-            'categoria': cat['categoria'],
-            'gasto': float(cat['gasto'] or 0)
-        })
-    
-    # 3. Percentual por categoria
-    total_geral = saldo_total
-    categorias_percentual = []
-    
-    for cat in categorias_gasto:
-        gasto = cat['gasto']
-        if total_geral > 0:
-            percentual = (gasto / total_geral) * 100
-        else:
-            percentual = 0
-            
-        categorias_percentual.append({
-            'categoria': cat['categoria'],
-            'total_pago': gasto,
-            'percentual': round(percentual, 2)
-        })
-    
-    # 4. Dados mensais para gráfico
-    meses_data = transactions.annotate(
-        mes_ano=TruncMonth('created_at')
-    ).values('mes_ano').annotate(
-        entrada=Sum(
-            Case(
-                When(forma='Débito', tipo='Entrada', then='valor'),
-                default=Value(0),
-                output_field=DecimalField(max_digits=15, decimal_places=2)
+        
+        entrada = dashboard_agg['entrada'] or 0
+        saida_credito = dashboard_agg['saida_credito'] or 0
+        saida_debito = dashboard_agg['saida_debito'] or 0
+        saida_total = saida_credito + saida_debito
+        saldo_total = entrada - saida_total
+        
+        dashboard_data = {
+            'entrada': float(entrada),
+            'saida': float(saida_total),
+            'saldo_total': float(saldo_total)
+        }
+        
+        # 2. Dados por categoria (gastos)
+        categorias_data = transactions.filter(
+            tipo='Saída'
+        ).values('categoria').annotate(
+            gasto=Sum(
+                Case(
+                               When(
+                Q(forma='Crédito', status_pagamento='Pendente') |
+                Q(forma='Débito') |
+                Q(forma='Pix') |
+                Q(forma='Dinheiro') |
+                Q(forma='Transferência'),
+                then='valor'
+            ),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
             )
-        ),
-        saida=Sum(
-            Case(
-                When(Q(forma='Crédito', status_pagamento='Pendente') | Q(forma='Débito', tipo='Saída'), then='valor'),
-                default=Value(0),
-                output_field=DecimalField(max_digits=15, decimal_places=2)
-            )
-        )
-    ).order_by('mes_ano')
-    
-    meses_formatados = []
-    for item in meses_data:
-        if item['mes_ano']:
-            meses_formatados.append({
-                'mes_ano': item['mes_ano'].strftime('%m/%Y'),
-                'entrada': float(item['entrada'] or 0),
-                'saida': float(item['saida'] or 0)
+        ).order_by('-gasto')
+        
+        # Converter para lista de dicionários
+        categorias_gasto = []
+        for cat in categorias_data:
+            categorias_gasto.append({
+                'categoria': cat['categoria'],
+                'gasto': float(cat['gasto'] or 0)
             })
+        
+        # 3. Percentual por categoria - CORREÇÃO: usar total de gastos em vez de saldo_total
+        total_gastos = sum(cat['gasto'] for cat in categorias_gasto)
+        categorias_percentual = []
+        
+        for cat in categorias_gasto:
+            gasto = cat['gasto']
+            if total_gastos > 0:
+                percentual = (gasto / total_gastos) * 100
+            else:
+                percentual = 0
+                
+            categorias_percentual.append({
+                'categoria': cat['categoria'],
+                'total_pago': gasto,
+                'percentual': round(percentual, 2)
+            })
+        
+        # 4. Dados mensais para gráfico - CORREÇÃO: usar campo 'data' em vez de 'created_at'
+        meses_data = transactions.annotate(
+            mes_ano=TruncMonth('data')
+        ).values('mes_ano').annotate(
+            entrada=Sum(
+                Case(
+                    When(
+                        Q(tipo='Entrada'),
+                        then='valor'
+                    ),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            ),
+            saida=Sum(
+                Case(
+                    When(
+                        Q(tipo='Saída'),
+                        then='valor'
+                    ),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            )
+        ).order_by('mes_ano')
+
+        meses_formatados = []
+        for item in meses_data:
+            if item['mes_ano']:
+                meses_formatados.append({
+                    'mes_ano': item['mes_ano'].strftime('%m/%Y'),
+                    'entrada': float(item['entrada'] or 0),
+                    'saida': float(item['saida'] or 0)
+                })
+        
+        return Response({
+            'dashboard': dashboard_data,
+            'categorias_gasto': categorias_gasto,
+            'categorias_percentual': categorias_percentual,
+            'grafico_mensal': meses_formatados
+        })
     
-    return Response({
-        'dashboard': dashboard_data,
-        'categorias_gasto': categorias_gasto,
-        'categorias_percentual': categorias_percentual,
-        'grafico_mensal': meses_formatados
-    })
+    except Exception as e:
+        logger.error(f"Erro no dashboard: {str(e)}", exc_info=True)
+        return Response(
+            {'error': 'Erro interno do servidor'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

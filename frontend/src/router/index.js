@@ -1,14 +1,18 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from '../views/Home.vue'
-import AboutView from '../views/AboutView.vue'
-import PainelView from '../views/Painel.vue'
-import Termos from '../views/Termos.vue'
-import HomePainel from '../views/HomePainel.vue'
-import Lancamento from '../views/Lancamento.vue'
-import FriendList from '../views/FriendList.vue'
-import Pagamentos from '../views/Pagamentos.vue'
-import Investimentos from '../views/Investimentos/Lancamento_Investimento'
-import Dashboard_Investimento from '../views/Investimentos/Dashboard_Investimento'
+import HomeView from '@/views/Home.vue'
+import AboutView from '@/views/AboutView.vue'
+import PainelView from '@/views/Painel.vue'
+import TermosView from '@/views/Termos.vue'
+import HomePainelView from '@/views/HomePainel.vue'
+import LancamentoView from '@/views/Lancamento.vue'
+import FriendListView from '@/views/FriendList.vue'
+import PagamentosView from '@/views/Pagamentos.vue'
+
+// Views de Investimentos
+import LancamentoInvestimento from '../views/Investimentos/Lancamento_Investimento.vue';
+import DashboardInvestimento from '../views/Investimentos/Dashboard_Investimento.vue';
+
+
 
 const routes = [
     {
@@ -29,37 +33,37 @@ const routes = [
     {
     path: '/termos-e-condicoes',
     name: 'termos',
-    component: Termos
+    component: TermosView
   },
     {
     path: '/home-painel',
     name: 'HomePainel',
-    component: HomePainel
+    component: HomePainelView
   },
     {
     path: '/lancamento',
     name: 'Lancamento',
-    component: Lancamento
+    component: LancamentoView
   },
   {
     path: '/friendList',
     name: 'FriendList',
-    component: FriendList
+    component: FriendListView
   },
   {
     path: '/Pagamentos',
     name: 'Pagamentos',
-    component: Pagamentos
+    component: PagamentosView
   },
     {
     path: '/Investimentos',
     name: 'Investimentos',
-    component: Investimentos
+    component: LancamentoInvestimento
   },
     {
     path: '/Dashboard_Investimento',
     name: 'Dashboard_Investimento',
-    component: Dashboard_Investimento
+    component: DashboardInvestimento
   },
 
   

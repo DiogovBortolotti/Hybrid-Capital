@@ -20,6 +20,11 @@ class Transaction(models.Model):
         ('Lazer', 'Lazer'),
         ('Compras', 'Compras'),
         ('Saúde', 'Saúde'),
+        ('Casa', 'Casa'),
+        ('Carro', 'Carro'),
+        ('Assinatura', 'Assinatura'),
+        ('Estudo', 'Estudo'),
+        ('Salario', 'Salario'),
     ]
     
     TIPO_CHOICES = [
