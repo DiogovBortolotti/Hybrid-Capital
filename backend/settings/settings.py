@@ -13,11 +13,6 @@ from django.contrib.messages import constants as message_constants
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-# Carrega o .env
-load_dotenv()
-
 
 # habilitado para não precisar do https 'same-origin' -- origem
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
@@ -31,19 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', "j+1!j17l2e&^c7-fp$p0x!lro6@z*@3yvfdq_+8*=0==4ofjr2")
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').upper() == 'TRUE'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
-def parse_origins(env_var):
-    origins = os.getenv(env_var, "")
-    # Remove espaços e filtra strings vazias
-    return [o.strip() for o in origins.split(",") if o.strip()]
-
-ALLOWED_HOSTS = ["*"]                # qualquer host
-CORS_ALLOW_ALL_ORIGINS = True         # qualquer origem
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://127.0.0.1:8080"]  # lista explícita
+# Configurações do CORS
+CORS_ALLOWED_ORIGINS = [(os.getenv('CORS_ALLOWED_ORIGINS'))]
 
 
 CORS_ALLOW_CREDENTIALS = True
@@ -78,22 +68,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework.authtoken',
     'financas',
-    "investimentos",
     'corsheaders',
     'rest_framework',
     'accounts',
-    'django_filters',
-    
+    'bots'
 ]
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
-}
+
+ENCRYPT_KEY = os.getenv('ENCRYPT_KEY',  '')
+
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0') 
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0') 
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -107,7 +93,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'settings.urls'
-
 
 TEMPLATES = [
     {
@@ -131,17 +116,24 @@ WSGI_APPLICATION = 'settings.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'meu_banco'),
-        'USER': os.getenv('POSTGRES_USER', 'meu_usuario'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'minha_senha'),
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
-    }}
-
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'meu_banco'),
+            'USER': os.getenv('POSTGRES_USER', 'meu_usuario'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'minha_senha'),
+            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

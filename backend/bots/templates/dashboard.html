@@ -1,0 +1,25 @@
+<h1>Painel de Bots</h1>
+
+<a href="{% url 'adicionar_chave' %}">Adicionar chave Binance</a>
+<hr>
+
+<h2>Chaves API</h2>
+<ul>
+  {% for c in chaves %}
+    <li>{{ c.nome }} — {{ c.api_key|slice:":10" }}... 
+      <a href="{% url 'iniciar_monitoramento' c.id %}">Iniciar</a>
+    </li>
+  {% empty %}
+    <li>Nenhuma chave cadastrada</li>
+  {% endfor %}
+</ul>
+
+<hr>
+<h2>Últimos Trades</h2>
+<ul>
+  {% for log in logs %}
+    <li>{{ log.criado_em }} — {{ log.tipo }} {{ log.acao }} a {{ log.preco }}</li>
+  {% empty %}
+    <li>Sem transações ainda.</li>
+  {% endfor %}
+</ul>
