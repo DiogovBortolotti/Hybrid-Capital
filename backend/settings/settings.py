@@ -33,7 +33,9 @@ DEBUG = os.getenv('DEBUG', 'True').upper() == 'TRUE'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 # Configurações do CORS
-CORS_ALLOWED_ORIGINS = [(os.getenv('CORS_ALLOWED_ORIGINS'))]
+CORS_ALLOWED_ORIGINS = [origin for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if origin]
+
+
 
 
 CORS_ALLOW_CREDENTIALS = True
@@ -71,7 +73,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'accounts',
-    'bots'
+    'bots',
+    'investimentos'
 ]
 
 

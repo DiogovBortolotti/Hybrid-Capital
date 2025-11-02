@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import ChaveAPI, RegistroTrade
 from .forms import ChaveAPIForm
-from tasks import monitorar_e_operar
+from .tasks import monitorar_e_operar
 
 
 @login_required
